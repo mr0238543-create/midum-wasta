@@ -1,0 +1,12 @@
+{
+  "name": "ميدوم والواسطي",
+  "short_name": "ميدوم والواسطي",
+  "description": "دليلك لكل ما تحتاجه قريب منك",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF7F0",
+  "theme_color": "#F4721E",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

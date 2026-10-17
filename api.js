@@ -23,6 +23,12 @@ const DB_MESSAGES = [
   ["not_authorized", "هذا الإجراء مخصص للمشرفين."],
   ["not_participant", "لا تملك صلاحية الوصول لهذه المحادثة."],
   ["cannot_ban_self", "لا يمكنك حظر نفسك."],
+  ["cannot_order", "لا يمكنك طلب شراء من هذا النشاط."],
+  ["product_not_found", "هذا المنتج لم يعد متاحًا."],
+  ["payment_not_accepted", "طريقة الدفع هذه غير متاحة لدى النشاط. اختر طريقة أخرى."],
+  ["rate_limit_order", "وصلت للحد اليومي لطلبات الشراء (٢٠ طلبًا في اليوم)."],
+  ["invalid_receipt", "ملف الإيصال غير صالح. ارفعه من جديد."],
+  ["invalid_transition", "لا يمكن تنفيذ هذا الإجراء على الطلب في حالته الحالية."],
   ["last_admin", "لا يمكن حذف آخر مشرف في النظام. عيّن مشرفًا آخر أولًا."],
 ];
 
@@ -168,6 +174,53 @@ export const photoUrl = (path) => supabase.storage.from(BUCKET).getPublicUrl(pat
 export async function removePhotos(paths) {
   if (paths?.length) await supabase.storage.from(BUCKET).remove(paths);
 }
+
+// ───────────── المنتجات (الكتالوج) ─────────────
+export const listProducts = (businessId) =>
+  run(supabase.from("products_public").select("*").eq("business_id", businessId).order("sort_order").order("created_at"));
+export const listMyProducts = (businessId) =>
+  run(supabase.from("products").select("*").eq("business_id", businessId).order("sort_order").order("created_at"));
+export const createProduct = (p) => run(supabase.from("products").insert(p).select().single());
+export const updateProduct = (id, patch) => run(supabase.from("products").update(patch).eq("id", id).select().single());
+export const deleteProduct = (id) => run(supabase.from("products").delete().eq("id", id));
+
+// ───────────── طرق الدفع ─────────────
+export const getPaymentMethods = (businessId) =>
+  run(supabase.from("payment_methods_public").select("*").eq("business_id", businessId).maybeSingle());
+export const getMyPayments = (businessId) =>
+  run(supabase.from("business_payments").select("*").eq("business_id", businessId).maybeSingle());
+export async function savePayments(businessId, fields, exists) {
+  const f = { ...fields, updated_at: new Date().toISOString() };
+  if (exists) return run(supabase.from("business_payments").update(f).eq("business_id", businessId));
+  const { updated_at, ...ins } = f; // eslint-disable-line no-unused-vars
+  return run(supabase.from("business_payments").insert({ business_id: businessId, ...ins }));
+}
+
+// ───────────── الطلبات (الشراء) ─────────────
+const RECEIPTS = "receipts";
+export async function uploadReceipt(uid, blob) {
+  const path = `${uid}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from(RECEIPTS).upload(path, blob, { contentType: "image/jpeg", upsert: false });
+  if (error) throw new ApiError(humanize(error), error.statusCode);
+  return path;
+}
+export async function receiptUrl(path) {
+  const { data, error } = await supabase.storage.from(RECEIPTS).createSignedUrl(path, 3600);
+  if (error) throw new ApiError("تعذّر عرض الإيصال.", error.statusCode);
+  return data.signedUrl;
+}
+export async function removeReceipts(paths) {
+  if (paths?.length) await supabase.storage.from(RECEIPTS).remove(paths);
+}
+export const createOrder = (fields) => run(supabase.from("orders").insert(fields).select().single());
+export const getOrder = (id) => run(supabase.from("orders").select("*").eq("id", id).maybeSingle());
+export const listMyOrders = (uid) =>
+  run(supabase.from("orders").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(100));
+export const listIncomingOrders = (businessIds) =>
+  businessIds.length
+    ? run(supabase.from("orders").select("*").in("business_id", businessIds).order("created_at", { ascending: false }).limit(200))
+    : Promise.resolve([]);
+export const updateOrder = (id, patch) => run(supabase.from("orders").update(patch).eq("id", id).select().single());
 
 // ───────────── التقييمات ─────────────
 export const listReviews = (businessId) =>

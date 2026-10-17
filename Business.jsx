@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "./icons";
 import { useApp } from "./app";
+import { ProductsSection } from "./Products";
 import { back, go } from "./router";
 import * as api from "./api";
 import { Empty, ErrorBox, Field, Loading, Sheet, Stars, StarPicker, StatusBadge, useAsync } from "./ui";
@@ -252,7 +253,10 @@ export default function Business({ id }) {
         )}
 
         {isPublic && !demo && (
-          <Reviews business={b} canReview={interactive} onChanged={st.reload} onReport={(t) => setSheet({ report: t })} />
+          <>
+            <ProductsSection business={b} canOrder={interactive} />
+            <Reviews business={b} canReview={interactive} onChanged={st.reload} onReport={(t) => setSheet({ report: t })} />
+          </>
         )}
 
         {isPublic && !isOwner && !demo && (

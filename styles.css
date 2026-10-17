@@ -191,3 +191,23 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .prose p, .prose ul { margin: 0 0 8px; }
 .prose ul { padding-inline-start: 20px; }
 iframe.map { width: 100%; height: 180px; border: 0; border-radius: 20px; }
+
+/* ───── كتالوج المنتجات ───── */
+.products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.product { background: #fff; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+.product .pimg { aspect-ratio: 1; background: var(--peach); display: flex; align-items: center; justify-content: center; font-size: 34px; color: var(--deep); }
+.product .pimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.product .pbody { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; }
+.product .pname { font-weight: 700; font-size: 14px; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.product .pprice { color: var(--deep); font-weight: 800; font-size: 15px; }
+.product .pactions { display: flex; gap: 6px; padding: 0 10px 10px; }
+
+/* ───── الطلبات والدفع ───── */
+.btn.wa { background: #e3f6e8; color: #1a7f3c; }
+.paybox { border: 1.5px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.payopt { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 16px; background: #fff; text-align: right; width: 100%; font-weight: 700; }
+.payopt.on { border-color: var(--orange); background: var(--peach); }
+.payopt .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); flex-shrink: 0; }
+.payopt.on .dot { border-color: var(--orange); background: radial-gradient(var(--orange) 45%, transparent 50%); }
+.qty { display: flex; align-items: center; gap: 12px; }
+.qty button { width: 38px; height: 38px; border-radius: 50%; background: var(--peach); color: var(--deep); font-size: 20px; font-weight: 800; }

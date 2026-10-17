@@ -20,6 +20,7 @@ import Account from "./Account";
 import Jobs, { JobForm, MyJobs } from "./Jobs";
 import Admin from "./Admin";
 import { Privacy, Terms } from "./Legal";
+import { OrderDetail } from "./Orders";
 
 // auth: يتطلب تسجيل الدخول — admin: للمشرفين — tab: التبويب المفعّل — bare: بلا شريط سفلي
 const ROUTES = [
@@ -34,6 +35,7 @@ const ROUTES = [
   ["/favorites", { C: Favorites, auth: true, tab: "/account" }],
   ["/requests", { C: Requests, auth: true, tab: "/requests" }],
   ["/requests/:id", { C: RequestDetail, auth: true, tab: "/requests" }],
+  ["/orders/:id", { C: OrderDetail, auth: true, tab: "/requests" }],
   ["/chats", { C: Chats, auth: true, tab: "/chats" }],
   ["/chat/:id", { C: Chat, auth: true, bare: true }],
   ["/notifications", { C: Notifications, auth: true, tab: "/" }],

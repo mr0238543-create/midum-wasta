@@ -4,6 +4,7 @@ import { useApp } from "./app";
 import { go } from "./router";
 import * as api from "./api";
 import { Async, Empty, ErrorBox, Header, Loading, StatusBadge, TabHeader, Tabs2, useAsync } from "./ui";
+import { OrderCard } from "./Orders";
 import { REQUEST_STATUS, timeAgo, toAr } from "./util";
 
 const KIND = { service: "طلب خدمة", inquiry: "استفسار" };
@@ -21,38 +22,48 @@ function RequestCard({ r, incoming }) {
   );
 }
 
-// «طلباتي» (التي أرسلتها) + «الواردة» (على أنشطتي)
+// «مشترياتي» + «طلبات الخدمة» التي أرسلتها + «الواردة» على أنشطتي (شراء وخدمة)
 export default function Requests() {
   const { uid } = useApp();
-  const [tab, setTab] = useState("mine");
+  const [tab, setTab] = useState("orders");
   const data = useAsync(async () => {
-    const [mine, businesses] = await Promise.all([api.listMyRequests(uid), api.listMyBusinesses(uid)]);
-    const incoming = await api.listIncomingRequests(businesses.map((b) => b.id));
-    return { mine, incoming, hasBusinesses: businesses.length > 0 };
+    const [mine, orders, businesses] = await Promise.all([api.listMyRequests(uid), api.listMyOrders(uid), api.listMyBusinesses(uid)]);
+    const ids = businesses.map((b) => b.id);
+    const [incoming, incomingOrders] = await Promise.all([api.listIncomingRequests(ids), api.listIncomingOrders(ids)]);
+    return { mine, orders, incoming, incomingOrders, hasBusinesses: businesses.length > 0 };
   }, [uid]);
 
   const d = data.data;
   const showIncoming = d?.hasBusinesses;
-  const newIncoming = d ? d.incoming.filter((r) => r.status === "new").length : 0;
+  const newIncoming = d ? d.incoming.filter((r) => r.status === "new").length + d.incomingOrders.filter((o) => o.status === "new").length : 0;
+  const tabs = [{ id: "orders", label: "مشترياتي" }, { id: "mine", label: "طلبات الخدمة" }];
+  if (showIncoming) tabs.push({ id: "in", label: "واردة", count: newIncoming });
 
   return (
     <div className="screen">
-      <TabHeader title="طلباتي" subtitle="تابع حالة طلباتك واستفساراتك" />
+      <TabHeader title="طلباتي" subtitle="تابع مشترياتك وطلبات الخدمة والاستفسارات" />
       <div className="pad">
         {data.loading && !d ? <Loading /> : data.error ? <ErrorBox error={data.error} onRetry={data.reload} /> : (
           <>
-            {showIncoming && (
-              <div className="mb16" style={{ marginBottom: 14 }}>
-                <Tabs2 value={tab} onChange={setTab} tabs={[{ id: "mine", label: "طلباتي" }, { id: "in", label: "واردة على أنشطتي", count: newIncoming }]} />
+            <div style={{ marginBottom: 14 }}><Tabs2 value={tab} onChange={setTab} tabs={tabs} /></div>
+            {tab === "orders" ? (
+              d.orders.length === 0 ? (
+                <Empty icon="🛒" title="لا توجد مشتريات بعد" text="افتح أي نشاط واضغط «طلب شراء» على المنتج الذي يعجبك." action={<button className="btn primary" onClick={() => go("/categories")}>تصفح الأقسام</button>} />
+              ) : <div className="col">{d.orders.map((o) => <OrderCard key={o.id} o={o} />)}</div>
+            ) : tab === "mine" ? (
+              d.mine.length === 0 ? (
+                <Empty icon="🧾" title="لا توجد طلبات خدمة بعد" text="افتح أي نشاط واضغط «إرسال طلب خدمة أو استفسار»." action={<button className="btn primary" onClick={() => go("/categories")}>تصفح الأقسام</button>} />
+              ) : <div className="col">{d.mine.map((r) => <RequestCard key={r.id} r={r} />)}</div>
+            ) : (d.incomingOrders.length === 0 && d.incoming.length === 0) ? (
+              <Empty icon="📭" title="لا توجد طلبات واردة" text="ستظهر هنا طلبات الشراء والخدمة التي يرسلها العملاء لأنشطتك." />
+            ) : (
+              <div className="col">
+                {d.incomingOrders.length > 0 && <div className="bold">طلبات الشراء</div>}
+                {d.incomingOrders.map((o) => <OrderCard key={o.id} o={o} incoming />)}
+                {d.incoming.length > 0 && <div className="bold mt8">طلبات الخدمة والاستفسارات</div>}
+                {d.incoming.map((r) => <RequestCard key={r.id} r={r} incoming />)}
               </div>
             )}
-            {(tab === "mine" || !showIncoming) ? (
-              d.mine.length === 0 ? (
-                <Empty icon="🧾" title="لا توجد طلبات بعد" text="افتح أي نشاط واضغط «إرسال طلب خدمة أو استفسار»." action={<button className="btn primary" onClick={() => go("/categories")}>تصفح الأقسام</button>} />
-              ) : <div className="col">{d.mine.map((r) => <RequestCard key={r.id} r={r} />)}</div>
-            ) : d.incoming.length === 0 ? (
-              <Empty icon="📭" title="لا توجد طلبات واردة" text="ستظهر هنا الطلبات التي يرسلها العملاء لأنشطتك." />
-            ) : <div className="col">{d.incoming.map((r) => <RequestCard key={r.id} r={r} incoming />)}</div>}
           </>
         )}
       </div>

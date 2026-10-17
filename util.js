@@ -18,6 +18,21 @@ export function normalizePhone(input) {
 export const isEgMobile = (local) => /^01[0125]\d{8}$/.test(local);
 export const isValidPhone = (local) => /^0\d{8,10}$/.test(local);
 export const toE164 = (local) => "+20" + local.slice(1);
+// سعر بالجنيه: بدون كسور إن كان صحيحًا، مع فاصل الآلاف
+export function money(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "";
+  const txt = n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return `${toAr(txt).replace(/,/g, "٬").replace(/\./g, "٫")} ج.م`;
+}
+// يقرأ سعرًا يكتبه المستخدم (أرقام عربية أو لاتينية، فاصلة عشرية اختيارية) ويعيد رقمًا أو null
+export function parsePrice(input) {
+  if (/-|−/.test(String(input))) return null;
+  const s = toLatinDigits(input).replace(/[٫,]/g, ".").replace(/[^\d.]/g, "");
+  if (!s || (s.match(/\./g) || []).length > 1) return null;
+  const n = Number(s);
+  return Number.isFinite(n) && n >= 0 && n <= 10000000 ? Math.round(n * 100) / 100 : null;
+}
 export const phoneLabel = (local) => (local ? toAr(local) : "");
 
 export function timeAgo(iso) {
@@ -130,3 +145,24 @@ export function parseLatLng(text) {
 }
 // حدود تقريبية لمصر — لاكتشاف الإحداثيات الخاطئة
 export const inEgypt = ({ lat, lng }) => lat >= 21.5 && lat <= 32 && lng >= 24.5 && lng <= 37;
+
+// ───────────── الشراء والدفع ─────────────
+export const PAYMENT_METHODS = {
+  cod: { label: "الدفع عند الاستلام", icon: "💵" },
+  vodafone_cash: { label: "فودافون كاش", icon: "🔴" },
+  etisalat_cash: { label: "اتصالات كاش", icon: "🟢" },
+  orange_cash: { label: "أورنج كاش", icon: "🟠" },
+  instapay: { label: "إنستا باي", icon: "🏦" },
+};
+export const WALLET_METHODS = ["vodafone_cash", "etisalat_cash", "orange_cash", "instapay"];
+export const ORDER_STATUS = {
+  new: { label: "بانتظار القبول", tone: "warn" },
+  accepted: { label: "تم القبول", tone: "ok" },
+  shipped: { label: "في الطريق", tone: "ok" },
+  delivered: { label: "تم التسليم", tone: "ok" },
+  rejected: { label: "مرفوض", tone: "bad" },
+  cancelled: { label: "ملغي", tone: "mute" },
+};
+export const isMobilePhone = (local) => /^01[0125]\d{8}$/.test(local);
+// رابط واتساب لرقم مصري محلي (01XXXXXXXXX)
+export const waLink = (local, text = "") => `https://wa.me/20${local.slice(1)}${text ? `?text=${encodeURIComponent(text)}` : ""}`;

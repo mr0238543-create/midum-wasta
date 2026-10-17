@@ -21,7 +21,9 @@
 2. **شغّل ملفات قاعدة البيانات** من SQL Editor بالترتيب:
    1. `supabase/migrations/20261015000000_init.sql`
    2. `supabase/migrations/20261015000100_account_deletion.sql`
-   3. `supabase/seed.sql` (الأقسام والقرى)
+   3. `supabase/migrations/20261017000000_products.sql` (كتالوج المنتجات)
+   4. `supabase/migrations/20261018000000_orders.sql` (الطلبات وطرق الدفع وإيصالات التحويل)
+   5. `supabase/seed.sql` (الأقسام والقرى)
    - أسماء القرى في `seed.sql` مبدئية؛ راجعها وعدّلها من لوحة المشرف (تبويب «القرى») بعد أول دخول.
 3. **فعّل الدخول**: Authentication ← Providers:
    - **Email**: مفعّل افتراضيًا. للتجربة السريعة أوقف «Confirm email»، وللإطلاق الحقيقي اتركه مفعّلًا.

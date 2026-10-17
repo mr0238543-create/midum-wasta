@@ -82,12 +82,13 @@ export async function signInEmail({ email, password }) {
   fail(error);
   return data.session;
 }
-export async function signInGoogle() {
-  const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: appUrl() } });
-  fail(error);
+export async function signInWithGoogle(options) {
+    const { data, error } = await supabase.auth.signInWithOAuth({ 
+        provider: 'google', 
+        options: options || { redirectTo: appUrl() 
 }
 export async function sendPasswordReset(email) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: appUrl() });
+.resetPasswordForEmail(email, { redirectTo: appUrl() });
   fail(error);
 }
 export async function updatePassword(password) {

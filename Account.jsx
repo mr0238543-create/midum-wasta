@@ -89,7 +89,7 @@ export default function Account() {
           <div className="card col">
             <div className="bold">سجّل الدخول لتستفيد من كل المزايا</div>
             <div className="muted small" style={{ lineHeight: 1.8 }}>التقييم، المفضلة، المحادثات، الطلبات، وإضافة نشاطك.</div>
-            <button className="btn primary block" onClick={() => go("/login?next=/account")}>تسجيل الدخول برقم الهاتف</button>
+            <button className="btn primary block" onClick={() => go("/login?next=/account")}>تسجيل الدخول بالبريدالإلكتروني</button>
           </div>
         ) : (
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>

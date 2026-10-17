@@ -11,7 +11,7 @@ export const isConfigured = Boolean(SUPABASE_URL && ANON_KEY && !SUPABASE_URL.in
 // المفتاح هنا هو anon العام فقط؛ الأمان الفعلي من سياسات قاعدة البيانات (RLS).
 export const supabase = isConfigured
   ? createClient(SUPABASE_URL, ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" },
       realtime: { params: { eventsPerSecond: 5 } },
     })
   : null;

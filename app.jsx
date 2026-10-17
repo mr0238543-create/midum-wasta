@@ -39,7 +39,7 @@ export function AppProvider({ children }) {
     }
   }, []);
   useEffect(() => { loadPublic(); }, [loadPublic]);
-  useEffect(() => api.onAuthChange((s) => setSession(s)), []);
+  useEffect(() => api.onAuthChange((s, ev) => { setSession(s); if (ev === "PASSWORD_RECOVERY") go("/login?mode=reset"); }), []);
 
   const uid = session?.user?.id || null;
 

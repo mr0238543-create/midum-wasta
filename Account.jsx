@@ -78,7 +78,7 @@ export default function Account() {
           {session ? (
             <>
               <h1 style={{ fontSize: 20, marginTop: 10 }}>{profile?.full_name || "مستخدم"}</h1>
-              <div style={{ fontSize: 13, opacity: 0.92 }}><span className="ltr" style={{ display: "inline-block" }}>{profile?.phone ? toAr("+" + profile.phone.replace(/^\+/, "")) : ""}</span> · {ROLE[profile?.role] || ""}</div>
+              <div style={{ fontSize: 13, opacity: 0.92 }}><span className="ltr" style={{ display: "inline-block" }}>{session?.user?.email || ""}</span> · {ROLE[profile?.role] || ""}</div>
             </>
           ) : <h1 style={{ fontSize: 20, marginTop: 10 }}>مرحبًا بك</h1>}
         </div>

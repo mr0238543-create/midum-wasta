@@ -21,7 +21,7 @@ function Row({ icon, label, children }) {
 
 // ───────────── طلب خدمة / استفسار ─────────────
 function RequestSheet({ business, onClose }) {
-  const { toast } = useApp();
+  const { toast, profile } = useApp();
   const [kind, setKind] = useState("service");
   const [message, setMessage] = useState("");
   const [sharePhone, setSharePhone] = useState(false);
@@ -48,10 +48,12 @@ function RequestSheet({ business, onClose }) {
           <textarea className={`input ${err ? "bad" : ""}`} rows={4} maxLength={1000} value={message} onChange={(e) => { setMessage(e.target.value); setErr(""); }}
             placeholder={kind === "service" ? "اشرح الخدمة المطلوبة والموعد المناسب" : "اكتب سؤالك"} />
         </Field>
-        <label className="check">
-          <input type="checkbox" checked={sharePhone} onChange={(e) => setSharePhone(e.target.checked)} />
-          أوافق على مشاركة رقم هاتفي مع صاحب النشاط ليتواصل معي. (بدونه يكون التواصل داخل التطبيق فقط)
-        </label>
+        {profile?.phone && (
+          <label className="check">
+            <input type="checkbox" checked={sharePhone} onChange={(e) => setSharePhone(e.target.checked)} />
+            أوافق على مشاركة رقم هاتفي مع صاحب النشاط ليتواصل معي. (بدونه يكون التواصل داخل التطبيق فقط)
+          </label>
+        )}
         <button className="btn primary block" disabled={busy} onClick={submit}>{busy ? "جارٍ الإرسال…" : "إرسال الطلب"}</button>
       </div>
     </Sheet>

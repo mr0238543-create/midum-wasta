@@ -44,9 +44,13 @@ export function humanize(err) {
 function humanizeAuth(err) {
   const msg = String(err?.message || "");
   const status = err?.status;
-  if (/invalid|expired|token/i.test(msg)) return "رمز التحقق غير صحيح أو انتهت صلاحيته.";
+  if (/invalid login credentials/i.test(msg)) return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+  if (/email not confirmed/i.test(msg)) return "لم يتم تأكيد بريدك بعد. افتح رسالة التأكيد في بريدك ثم سجّل الدخول.";
+  if (/already registered|already been registered|user_already_exists/i.test(msg)) return "هذا البريد مسجّل من قبل. سجّل الدخول بدلًا من إنشاء حساب.";
+  if (/password.*(least|short|weak|characters)|weak_password/i.test(msg)) return "كلمة المرور ضعيفة. استخدم ٨ أحرف على الأقل.";
+  if (/valid email|invalid.*email|email.*invalid/i.test(msg)) return "اكتب بريدًا إلكترونيًا صحيحًا.";
+  if (/provider is not enabled|unsupported provider/i.test(msg)) return "الدخول بواسطة Google غير مفعّل بعد في إعدادات المشروع.";
   if (status === 429 || /rate limit|too many|security purposes/i.test(msg)) return "محاولات كثيرة. انتظر دقيقة ثم أعد المحاولة.";
-  if (/phone|sms|provider|twilio/i.test(msg)) return "تعذّر إرسال رسالة التحقق إلى هذا الرقم. تأكد من الرقم وحاول مجددًا.";
   if (/failed to fetch|network/i.test(msg)) return "تعذّر الاتصال بالإنترنت. تحقق من الشبكة وأعد المحاولة.";
   return "تعذّر تسجيل الدخول. أعد المحاولة.";
 }
@@ -58,23 +62,44 @@ async function run(query) {
 }
 
 // ───────────── الجلسة والحساب ─────────────
-export async function sendOtp(e164, captchaToken) {
-  const options = { shouldCreateUser: true, channel: "sms" };
-  if (captchaToken) options.captchaToken = captchaToken; // اختياري: يُفعَّل مع Cloudflare Turnstile لمنع إساءة استخدام الرسائل
-  const { error } = await supabase.auth.signInWithOtp({ phone: e164, options });
-  if (error) throw new ApiError(humanizeAuth(error), error.status);
+const appUrl = () => window.location.origin + window.location.pathname;
+const fail = (error) => { if (error) throw new ApiError(humanizeAuth(error), error.status, error.message); };
+
+// إنشاء حساب بالبريد وكلمة المرور. الاسم يُحفظ في الملف الشخصي تلقائيًا عبر trigger في القاعدة.
+// يعيد { session, needsConfirm }: إن كان تأكيد البريد مفعّلًا في Supabase لا تُنشأ جلسة حتى يؤكد المستخدم.
+export async function signUpEmail({ email, password, name }) {
+  const { data, error } = await supabase.auth.signUp({
+    email, password, options: { data: { full_name: name }, emailRedirectTo: appUrl() },
+  });
+  fail(error);
+  // بريد مسجّل مسبقًا: Supabase يعيد مستخدمًا بلا هويات بدل خطأ (لمنع كشف الحسابات)
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
+    throw new ApiError("هذا البريد مسجّل من قبل. سجّل الدخول بدلًا من إنشاء حساب.");
+  return { session: data.session, needsConfirm: !data.session };
 }
-export async function verifyOtp(e164, token) {
-  const { data, error } = await supabase.auth.verifyOtp({ phone: e164, token, type: "sms" });
-  if (error) throw new ApiError(humanizeAuth(error), error.status);
+export async function signInEmail({ email, password }) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  fail(error);
   return data.session;
+}
+export async function signInGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: appUrl() } });
+  fail(error);
+}
+export async function sendPasswordReset(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: appUrl() });
+  fail(error);
+}
+export async function updatePassword(password) {
+  const { error } = await supabase.auth.updateUser({ password });
+  fail(error);
 }
 export async function getSession() {
   const { data } = await supabase.auth.getSession();
   return data.session;
 }
 export function onAuthChange(cb) {
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => cb(session));
+  const { data } = supabase.auth.onAuthStateChange((event, session) => cb(session, event));
   return () => data.subscription.unsubscribe();
 }
 export const signOut = () => supabase.auth.signOut();

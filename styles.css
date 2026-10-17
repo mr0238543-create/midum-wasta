@@ -151,6 +151,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .toast.bad { background: var(--red); }
 .banner { border-radius: 16px; padding: 12px 14px; font-size: 13.5px; line-height: 1.7; }
 .banner.warn { background: var(--amber-bg); color: var(--amber); }
+.banner.ok { background: var(--green-bg); color: var(--green); }
 .banner.bad { background: var(--red-bg); color: var(--red); }
 .banner.ok { background: var(--green-bg); color: var(--green); }
 .banner.info { background: var(--peach); color: var(--deep); }

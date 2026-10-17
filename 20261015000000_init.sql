@@ -257,7 +257,11 @@ $$;
 create function public.trg_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  insert into profiles (id, phone) values (new.id, new.phone) on conflict do nothing;
+  -- الاسم من بيانات التسجيل (نموذج البريد) أو من Google (full_name / name)
+  insert into profiles (id, phone, full_name)
+  values (new.id, nullif(new.phone, ''),
+          nullif(left(btrim(coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', '')), 80), ''))
+  on conflict do nothing;
   return new;
 end $$;
 create trigger on_auth_user_created after insert on auth.users

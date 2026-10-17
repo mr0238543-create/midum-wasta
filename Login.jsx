@@ -69,7 +69,8 @@ export default function Login() {
 
   const google = async () => {
     setError(""); setInfo(""); setBusy(true);
-    try { await api.signInGoogle(); } // يحوّل المتصفح إلى Google ثم يعود للتطبيق
+    try { await api.signInWithGoogle({ redirectTo: 'https://midum-wasta.vercel.app' }); }
+
     catch (err) { setError(err.message); setBusy(false); }
   };
 

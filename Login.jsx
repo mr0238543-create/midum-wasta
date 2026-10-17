@@ -67,13 +67,11 @@ export default function Login() {
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
 
-    const google = async () => {
+  const google = async () => {
     setError(""); setInfo(""); setBusy(true);
-    try {
-      await api.signInWithGoogle({ redirectTo: 'https://midum-wasta.vercel.app' });
-    } catch (err) { setError(err.message); setBusy(false); }
+    try { await api.signInWithGoogle(); } // يحوّل المتصفح إلى Google ثم يعود للتطبيق
+    catch (err) { setError(err.message); setBusy(false); }
   };
-
 
   const saveNewPassword = async (e) => {
     e.preventDefault(); setError("");

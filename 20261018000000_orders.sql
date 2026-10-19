@@ -140,8 +140,8 @@ begin
       end if;
     else
       perform notify(new.user_id, 'order_update',
-        case new.status when 'accepted' then 'تم قبول طلبك' when 'rejected' then 'تعذّر قبول طلبك'
-                        when 'shipped' then 'طلبك في الطريق' when 'delivered' then 'تم تسليم طلبك' else 'تحديث على طلبك' end,
+        case new.status when 'accepted' then 'تمت الموافقة على طلبك ✅' when 'rejected' then 'تعذّر قبول طلبك'
+                        when 'shipped' then 'طلبك جاري التوصيل 🚚' when 'delivered' then 'تم تسليم طلبك — مكتمل 🎉' else 'تحديث على طلبك' end,
         new.product_name || ' — «' || new.business_name || '»', '/orders/' || new.id);
     end if;
   elsif new.receipt_path is distinct from old.receipt_path and new.receipt_path is not null and v_owner is not null then

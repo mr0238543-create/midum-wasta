@@ -121,7 +121,16 @@ export async function deleteMyAccount(uid) {
     const { data } = await supabase.storage.from("business-photos").list(uid, { limit: 100 });
     if (data?.length) await supabase.storage.from("business-photos").remove(data.map((f) => `${uid}/${f.name}`));
   } catch { /* لا نمنع الحذف بسبب الصور */ }
-  await run(supabase.rpc("delete_my_account"));
+  try { // إيصالات الدفع (خاصة)
+    const { data } = await supabase.storage.from("receipts").list(uid, { limit: 100 });
+    if (data?.length) await supabase.storage.from("receipts").remove(data.map((f) => `${uid}/${f.name}`));
+  } catch { /* لا نمنع الحذف */ }
+  const { error } = await supabase.rpc("delete_my_account");
+  if (error) {
+    if (/last_admin/.test(error.message || "")) throw new ApiError("أنت المشرف الوحيد، عيّن مشرفًا آخر قبل حذف حسابك.", error.code, error.message);
+    if (error.code === "PGRST202" || /could not find the function/i.test(error.message || "")) throw new ApiError("ميزة حذف الحساب غير مفعّلة بعد على الخادم. تواصل مع المطوّر.", error.code, error.message);
+    throw new ApiError(humanize(error), error.code, error.message);
+  }
   await supabase.auth.signOut().catch(() => {});
 }
 
@@ -300,6 +309,17 @@ export function subscribeNotifications(uid, onInsert) {
     .subscribe();
   return () => supabase.removeChannel(ch);
 }
+
+// ───────────── اشتراكات الإشعارات الفورية ─────────────
+export async function savePushSubscription(uid, sub) {
+  const k = sub.keys || {};
+  if (!sub.endpoint || !k.p256dh || !k.auth) throw new ApiError("بيانات الاشتراك ناقصة");
+  const row = { user_id: uid, endpoint: sub.endpoint, p256dh: k.p256dh, auth: k.auth, user_agent: (navigator.userAgent || "").slice(0, 300) };
+  // نحذف أي اشتراك لنفس الجهاز على حسابنا ثم نضيفه (بدون upsert لتجنّب تعارض RLS)
+  await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+  return run(supabase.from("push_subscriptions").insert(row));
+}
+export const deletePushSubscription = (endpoint) => run(supabase.from("push_subscriptions").delete().eq("endpoint", endpoint));
 
 // ───────────── البلاغات ─────────────
 export const reportTarget = ({ type, id, reason, details }) =>

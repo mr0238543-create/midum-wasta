@@ -2,7 +2,7 @@
 -- فتُحذف كل بياناته بالتسلسل (profiles, businesses, reviews, requests, conversations, notifications...).
 -- لا يُسمح بحذف آخر مشرف حتى لا يبقى النظام بلا إدارة.
 
-create function public.delete_my_account() returns void
+create or replace function public.delete_my_account() returns void
 language plpgsql security definer set search_path = public as $$
 begin
   if auth.uid() is null then raise exception 'not_authorized' using errcode = '42501'; end if;

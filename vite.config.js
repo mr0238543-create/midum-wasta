@@ -4,8 +4,8 @@ import fs from "node:fs";
 
 // المشروع هنا بدون مجلدات (كل الملفات في الجذر)، فلا يوجد مجلد public.
 // هذه الإضافة تخدم الأيقونة والـ manifest في التطوير وتنسخهما إلى dist عند البناء.
-const staticFiles = ["icon.svg", "manifest.webmanifest"];
-const types = { ".svg": "image/svg+xml", ".webmanifest": "application/manifest+json" };
+const staticFiles = ["icon.svg", "manifest.webmanifest", "sw.js"];
+const types = { ".svg": "image/svg+xml", ".webmanifest": "application/manifest+json", ".js": "text/javascript" };
 const rootStatic = () => ({
   name: "root-static-files",
   configureServer(server) {

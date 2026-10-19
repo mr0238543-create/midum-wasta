@@ -7,6 +7,8 @@ import { Field, Sheet, TabHeader } from "./ui";
 import { areaLabel, useArea } from "./area";
 import { AreaSheet } from "./shared";
 import { toAr } from "./util";
+import PushCard from "./PushCard";
+import { playNotifySound, setSoundOn, soundOn } from "./sound";
 
 const ROLE = { user: "مستخدم", owner: "صاحب نشاط", admin: "مشرف" };
 
@@ -45,7 +47,7 @@ function EditProfile({ onClose }) {
             {villages.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
         </Field>
-        <div className="small muted">رقم الموبايل ثابت ومرتبط بحسابك، ولا يمكن تغييره من هنا.</div>
+        <div className="small muted">بريدك الإلكتروني مرتبط بحسابك ولا يمكن تغييره من هنا.</div>
         <button className="btn primary block" disabled={busy} onClick={save}>{busy ? "جارٍ الحفظ…" : "حفظ"}</button>
       </div>
     </Sheet>
@@ -57,6 +59,7 @@ export default function Account() {
   const area = useArea();
   const [areaOpen, setAreaOpen] = useState(false);
   const [edit, setEdit] = useState(false);
+  const [sound, setSound] = useState(soundOn());
 
   const del = async () => {
     const ok = await confirm({
@@ -85,11 +88,12 @@ export default function Account() {
       </div>
 
       <div className="pad">
+        {session && <PushCard />}
         {!session ? (
           <div className="card col">
             <div className="bold">سجّل الدخول لتستفيد من كل المزايا</div>
             <div className="muted small" style={{ lineHeight: 1.8 }}>التقييم، المفضلة، المحادثات، الطلبات، وإضافة نشاطك.</div>
-            <button className="btn primary block" onClick={() => go("/login?next=/account")}>تسجيل الدخول برقم الهاتف</button>
+            <button className="btn primary block" onClick={() => go("/login?next=/account")}>تسجيل الدخول</button>
           </div>
         ) : (
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -99,6 +103,8 @@ export default function Account() {
             <Item icon="briefcase" label="وظائفي" onClick={() => go("/jobs/mine")} />
             <Item icon="heart" label="المفضلة" badge={toAr(favIds.size)} onClick={() => go("/favorites")} />
             <Item icon="bell" label="الإشعارات" onClick={() => go("/notifications")} />
+            <Item icon="bell" label="صوت التنبيهات داخل التطبيق" badge={sound ? "مفعّل" : "متوقف"}
+              onClick={() => { const v = !sound; setSound(v); setSoundOn(v); if (v) playNotifySound("order"); }} />
             {isAdmin && <Item icon="shield" label="لوحة المشرف" onClick={() => go("/admin")} />}
           </div>
         )}

@@ -4,6 +4,7 @@ import * as api from "./api";
 import { releasePush, syncPush } from "./push";
 import { playNotifySound, unlockSound } from "./sound";
 import IosBanner from "./IosBanner";
+import { PushPrompt } from "./PushCard";
 import { go } from "./router";
 import Icon from "./icons";
 
@@ -115,6 +116,7 @@ export function AppProvider({ children }) {
       {toastState && <div className={`toast ${toastState.tone === "bad" ? "bad" : ""}`} role="status">{toastState.message}</div>}
       {dialog && <Dialog dialog={dialog} onClose={closeDialog} />}
       <IosBanner />
+      <PushPrompt />
     </Ctx.Provider>
   );
 }

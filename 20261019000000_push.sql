@@ -63,3 +63,9 @@ do $$ begin
   create trigger notifications_push after insert on public.notifications
     for each row execute function public.trg_notifications_push();
 exception when duplicate_object then null; end $$;
+
+-- ═══════ اختياري: OneSignal (ربط معرف الجهاز بالمستخدم) ═══════
+-- الجدول والدالة link_onesignal_player وتحديث trg_notifications_push مطبّقة على المشروع (migration: onesignal_players).
+-- لتفعيل OneSignal أضف: insert into push_config(key,value) values ('onesignal_app_id','...'),('onesignal_api_key','...')
+--   on conflict (key) do update set value = excluded.value;
+-- ثم ضع الـ App ID في config.js (ONESIGNAL_APP_ID).

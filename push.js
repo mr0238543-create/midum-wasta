@@ -1,10 +1,12 @@
 // الإشعارات الفورية (Web Push) من جهة المتصفح.
 import { DEFAULTS } from "./config";
 import * as api from "./api";
+import { oneSignalEnabled, osDisable, osEnable, osLink, osRelease, osState } from "./onesignal";
 
 const VAPID_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || DEFAULTS.VAPID_PUBLIC_KEY;
 
-export const pushSupported = () =>
+const base = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+export const pushSupported = () => oneSignalEnabled() ? base() :
   typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && !!VAPID_KEY;
 
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -29,6 +31,7 @@ export async function pushState() {
   if (needsInstall()) return "install";
   if (!pushSupported()) return "unsupported";
   if (Notification.permission === "denied") return "denied";
+  if (oneSignalEnabled()) { try { return await osState(); } catch { return "off"; } }
   try {
     const r = await navigator.serviceWorker.getRegistration("/sw.js");
     const s = r && (await r.pushManager.getSubscription());
@@ -38,6 +41,7 @@ export async function pushState() {
 
 export async function enablePush(uid) {
   if (!pushSupported()) throw new Error("متصفحك لا يدعم الإشعارات الفورية.");
+  if (oneSignalEnabled()) return osEnable(uid);
   const perm = await Notification.requestPermission();
   if (perm !== "granted") throw new Error("لم يتم السماح بالإشعارات. فعّلها من إعدادات المتصفح للموقع.");
   const r = await registration();
@@ -47,6 +51,7 @@ export async function enablePush(uid) {
 }
 
 export async function disablePush() {
+  if (oneSignalEnabled()) return osDisable();
   const r = await navigator.serviceWorker.getRegistration("/sw.js");
   const s = r && (await r.pushManager.getSubscription());
   if (s) { await api.deletePushSubscription(s.endpoint).catch(() => {}); await s.unsubscribe().catch(() => {}); }
@@ -55,7 +60,9 @@ export async function disablePush() {
 // عند فتح التطبيق: إن كان مفعّلًا نحدّث تسجيل الجهاز (قد يتغير عنوان الاشتراك)
 export async function syncPush(uid) {
   try {
-    if (!pushSupported() || Notification.permission !== "granted") return;
+    if (!pushSupported()) return;
+    if (oneSignalEnabled()) { if (Notification.permission === "granted") await osLink(uid); return; }
+    if (Notification.permission !== "granted") return;
     const r = await navigator.serviceWorker.getRegistration("/sw.js");
     const s = r && (await r.pushManager.getSubscription());
     if (s) await api.savePushSubscription(uid, s.toJSON());
@@ -64,5 +71,5 @@ export async function syncPush(uid) {
 
 // عند تسجيل الخروج: لا يستقبل الجهاز إشعارات حساب لم يعد مسجّلًا عليه
 export async function releasePush() {
-  try { if (pushSupported()) await disablePush(); } catch { /* صامت */ }
+  try { if (oneSignalEnabled()) { await osRelease(); return; } if (pushSupported()) await disablePush(); } catch { /* صامت */ }
 }

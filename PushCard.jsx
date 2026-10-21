@@ -50,3 +50,39 @@ export default function PushCard({ compact }) {
     </div>
   );
 }
+
+// طلب تفعيل الإشعارات بعد تسجيل الدخول مباشرة: شريط صغير بزر واحد.
+// المتصفحات لا تسمح بطلب الإذن إلا بعد لمسة من المستخدم، لذلك الإذن نفسه يُطلب عند الضغط على «تفعيل».
+const SNOOZE = "midum_push_prompt_until";
+const snoozed = () => { try { return Number(localStorage.getItem(SNOOZE) || 0) > Date.now(); } catch { return false; } };
+
+export function PushPrompt() {
+  const { uid, toast } = useApp();
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let a = true;
+    if (!uid || snoozed()) { setShow(false); return; }
+    const t = setTimeout(() => pushState().then((s) => a && setShow(s === "off")), 2500);
+    return () => { a = false; clearTimeout(t); };
+  }, [uid]);
+  if (!show) return null;
+  const later = () => { try { localStorage.setItem(SNOOZE, String(Date.now() + 3 * 24 * 3600 * 1000)); } catch { /* تجاهل */ } setShow(false); };
+  const on = async () => {
+    setBusy(true);
+    try { await enablePush(uid); setShow(false); toast("تم تفعيل الإشعارات الفورية"); }
+    catch (e) { toast(e.message || "تعذّر التفعيل", "bad"); later(); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="banner info" role="dialog" aria-label="تفعيل الإشعارات"
+      style={{ position: "fixed", insetInline: 12, bottom: 84, zIndex: 40, boxShadow: "0 6px 24px rgba(0,0,0,.18)" }}>
+      <div className="bold">🔔 فعّل الإشعارات لتصلك الطلبات والرسائل فورًا</div>
+      <div className="small" style={{ marginTop: 2 }}>حتى لو التطبيق مقفول — بنبّهك أول ما حد يطلب منك أو يرد عليك.</div>
+      <div className="row" style={{ gap: 8, marginTop: 8 }}>
+        <button className="btn primary" disabled={busy} onClick={on}>{busy ? "…" : "تفعيل الآن"}</button>
+        <button className="btn ghost" onClick={later}>لاحقًا</button>
+      </div>
+    </div>
+  );
+}

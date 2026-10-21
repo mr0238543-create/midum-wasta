@@ -319,6 +319,9 @@ export async function savePushSubscription(uid, sub) {
   await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
   return run(supabase.from("push_subscriptions").insert(row));
 }
+// OneSignal: ربط معرف الجهاز بالمستخدم الحالي فقط (دالة آمنة على الخادم تنقل الجهاز لو كان على حساب سابق)
+export const linkOneSignalPlayer = (playerId) => run(supabase.rpc("link_onesignal_player", { p_player: playerId }));
+export const deleteOneSignalPlayer = (playerId) => run(supabase.from("onesignal_players").delete().eq("player_id", playerId));
 export const deletePushSubscription = (endpoint) => run(supabase.from("push_subscriptions").delete().eq("endpoint", endpoint));
 
 // ───────────── البلاغات ─────────────

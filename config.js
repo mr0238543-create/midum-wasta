@@ -8,5 +8,5 @@ export const DEFAULTS = {
   VAPID_PUBLIC_KEY: "BJf3Uj25qDjo29UxtHayYg5EKe3-_TYH6k3n8DEaBTmx9gAYK9cXK0C3-UX3WgFdVQnhl5IzQ_KqEkp_hfvJthA",
   // اختياري: لو أنشأت تطبيقًا في OneSignal ضع الـ App ID هنا (وإلا يستخدم التطبيق Web Push المباشر).
   ONESIGNAL_APP_ID: "2b7b8007-ebe9-4033-95d6-4da8a863e25c",
-  CONTACT_EMAIL: "contact@example.com",
+  CONTACT_EMAIL: "mr0238543@gmail.com",
 };

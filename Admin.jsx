@@ -1,10 +1,10 @@
 import { useState } from "react";
-import Icon from "./icons";
-import { useApp } from "./app";
-import { go } from "./router";
-import * as api from "./api";
-import { Async, Empty, Header, StatusBadge, useAsync } from "./ui";
-import { BUSINESS_STATUS, JOB_STATUS, JOB_TYPES, REPORT_REASONS, directionsUrl, timeAgo, toAr } from "./util";
+import Icon from "../icons";
+import { useApp } from "../app";
+import { go } from "../router";
+import * as api from "../api";
+import { Async, Empty, Header, StatusBadge, useAsync } from "../ui";
+import { BUSINESS_STATUS, JOB_STATUS, JOB_TYPES, REPORT_REASONS, directionsUrl, timeAgo, toAr } from "../util";
 
 const Chips = ({ items, value, onChange }) => (
   <div className="chips" style={{ padding: "0 0 8px" }}>

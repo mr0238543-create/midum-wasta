@@ -1,12 +1,11 @@
-import PushCard from "./PushCard";
-import { useApp } from "./app";
-import { go } from "./router";
-import * as api from "./api";
-import Icon from "./icons";
-import { Async, BusinessCard, Empty, Header, TabHeader, useAsync } from "./ui";
+import { useApp } from "../app";
+import { go } from "../router";
+import * as api from "../api";
+import Icon from "../icons";
+import { Async, BusinessCard, Empty, Header, TabHeader, useAsync } from "../ui";
 import { CategoryGrid, AddBanner } from "./Home";
-import { areaLabel, useArea } from "./area";
-import { timeAgo } from "./util";
+import { areaLabel, useArea } from "../area";
+import { timeAgo } from "../util";
 
 export function Categories() {
   const { villages } = useApp();
@@ -40,7 +39,6 @@ export function Favorites() {
 const KIND_ICON = {
   business_approved: "✅", business_rejected: "⛔", business_changes: "✏️", business_suspended: "🚫",
   request_new: "🧾", request_update: "🔔", request_cancelled: "↩️", message: "💬",
-  order_new: "🛒", order_update: "📦", order_cancelled: "↩️", order_receipt: "🧾",
   job_approved: "✅", job_rejected: "⛔", job_suspended: "🚫",
 };
 
@@ -57,7 +55,6 @@ export function Notifications() {
     <div className="screen">
       <Header title="الإشعارات" backTo="/" right={hasUnread && <button className="pill" onClick={readAll}><Icon name="check" size={14} /> قراءة الكل</button>} />
       <div className="pad">
-        <PushCard compact />
         <Async state={st} rows={3} empty={<Empty icon="🔔" title="لا توجد إشعارات" text="ستصلك هنا تحديثات أنشطتك وطلباتك ورسائلك." />}>
           {(rows) => (
             <div className="col">

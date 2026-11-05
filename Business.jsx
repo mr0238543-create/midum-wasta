@@ -1,12 +1,11 @@
 import { useState } from "react";
-import Icon from "./icons";
-import { useApp } from "./app";
-import { ProductsSection } from "./Products";
-import { back, go } from "./router";
-import * as api from "./api";
-import { Empty, ErrorBox, Field, Loading, Sheet, Stars, StarPicker, StatusBadge, useAsync } from "./ui";
+import Icon from "../icons";
+import { useApp } from "../app";
+import { back, go } from "../router";
+import * as api from "../api";
+import { Empty, ErrorBox, Field, Loading, Sheet, Stars, StarPicker, StatusBadge, useAsync } from "../ui";
 import { ReportSheet } from "./shared";
-import { BUSINESS_STATUS, directionsUrl, fmtRating, osmEmbedUrl, shareUrl, timeAgo, toAr } from "./util";
+import { BUSINESS_STATUS, directionsUrl, fmtRating, osmEmbedUrl, shareUrl, timeAgo, toAr } from "../util";
 
 function Row({ icon, label, children }) {
   return (
@@ -22,7 +21,7 @@ function Row({ icon, label, children }) {
 
 // ───────────── طلب خدمة / استفسار ─────────────
 function RequestSheet({ business, onClose }) {
-  const { toast, profile } = useApp();
+  const { toast } = useApp();
   const [kind, setKind] = useState("service");
   const [message, setMessage] = useState("");
   const [sharePhone, setSharePhone] = useState(false);
@@ -49,12 +48,10 @@ function RequestSheet({ business, onClose }) {
           <textarea className={`input ${err ? "bad" : ""}`} rows={4} maxLength={1000} value={message} onChange={(e) => { setMessage(e.target.value); setErr(""); }}
             placeholder={kind === "service" ? "اشرح الخدمة المطلوبة والموعد المناسب" : "اكتب سؤالك"} />
         </Field>
-        {profile?.phone && (
-          <label className="check">
-            <input type="checkbox" checked={sharePhone} onChange={(e) => setSharePhone(e.target.checked)} />
-            أوافق على مشاركة رقم هاتفي مع صاحب النشاط ليتواصل معي. (بدونه يكون التواصل داخل التطبيق فقط)
-          </label>
-        )}
+        <label className="check">
+          <input type="checkbox" checked={sharePhone} onChange={(e) => setSharePhone(e.target.checked)} />
+          أوافق على مشاركة رقم هاتفي مع صاحب النشاط ليتواصل معي. (بدونه يكون التواصل داخل التطبيق فقط)
+        </label>
         <button className="btn primary block" disabled={busy} onClick={submit}>{busy ? "جارٍ الإرسال…" : "إرسال الطلب"}</button>
       </div>
     </Sheet>
@@ -253,10 +250,7 @@ export default function Business({ id }) {
         )}
 
         {isPublic && !demo && (
-          <>
-            <ProductsSection business={b} canOrder={interactive} />
-            <Reviews business={b} canReview={interactive} onChanged={st.reload} onReport={(t) => setSheet({ report: t })} />
-          </>
+          <Reviews business={b} canReview={interactive} onChanged={st.reload} onReport={(t) => setSheet({ report: t })} />
         )}
 
         {isPublic && !isOwner && !demo && (

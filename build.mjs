@@ -3,7 +3,7 @@ import { build } from "/opt/npm-tools/node_modules/esbuild/lib/main.js";
 import path from "node:path";
 import { execSync } from "node:child_process";
 const here = path.dirname(new URL(import.meta.url).pathname);
-const root = here;
+const root = path.resolve(here, "../..");
 const G = execSync("npm root -g").toString().trim();
 const redirect = {
   name: "redirect",
@@ -13,7 +13,7 @@ const redirect = {
   },
 };
 await build({
-  entryPoints: [path.join(root, "main.jsx")], bundle: true, format: "iife", jsx: "automatic", outfile: path.join(here, "out/bundle.js"),
+  entryPoints: [path.join(root, "src/main.jsx")], bundle: true, format: "iife", jsx: "automatic", outfile: path.join(here, "out/bundle.js"),
   loader: { ".jsx": "jsx", ".js": "jsx" }, minify: false, logLevel: "error", plugins: [redirect],
   alias: { react: `${G}/react`, "react-dom": `${G}/react-dom` },
   define: { "process.env.NODE_ENV": '"production"', "import.meta.env.VITE_TURNSTILE_SITE_KEY": '""', "import.meta.env": "{}" },

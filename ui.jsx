@@ -66,7 +66,6 @@ export function ErrorBox({ error, onRetry }) {
     <div className="empty" role="alert">
       <div className="ico">⚠️</div>
       <div className="bold">{error?.message || "حدث خطأ غير متوقع"}</div>
-      {error?.detail && <div className="muted small ltr" style={{ marginTop: 8, wordBreak: "break-word", maxWidth: 320 }}>{error.code ? `[${error.code}] ` : ""}{error.detail}</div>}
       {onRetry && <button className="btn soft mt12" onClick={onRetry}>إعادة المحاولة</button>}
     </div>
   );

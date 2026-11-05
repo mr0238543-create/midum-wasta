@@ -2,10 +2,9 @@
 import { supabase } from "./supabase";
 
 export class ApiError extends Error {
-  constructor(message, code, detail) {
+  constructor(message, code) {
     super(message);
     this.code = code;
-    this.detail = detail || "";
   }
 }
 
@@ -23,12 +22,6 @@ const DB_MESSAGES = [
   ["not_authorized", "هذا الإجراء مخصص للمشرفين."],
   ["not_participant", "لا تملك صلاحية الوصول لهذه المحادثة."],
   ["cannot_ban_self", "لا يمكنك حظر نفسك."],
-  ["cannot_order", "لا يمكنك طلب شراء من هذا النشاط."],
-  ["product_not_found", "هذا المنتج لم يعد متاحًا."],
-  ["payment_not_accepted", "طريقة الدفع هذه غير متاحة لدى النشاط. اختر طريقة أخرى."],
-  ["rate_limit_order", "وصلت للحد اليومي لطلبات الشراء (٢٠ طلبًا في اليوم)."],
-  ["invalid_receipt", "ملف الإيصال غير صالح. ارفعه من جديد."],
-  ["invalid_transition", "لا يمكن تنفيذ هذا الإجراء على الطلب في حالته الحالية."],
   ["last_admin", "لا يمكن حذف آخر مشرف في النظام. عيّن مشرفًا آخر أولًا."],
 ];
 
@@ -50,63 +43,37 @@ export function humanize(err) {
 function humanizeAuth(err) {
   const msg = String(err?.message || "");
   const status = err?.status;
-  if (/invalid login credentials/i.test(msg)) return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
-  if (/email not confirmed/i.test(msg)) return "لم يتم تأكيد بريدك بعد. افتح رسالة التأكيد في بريدك ثم سجّل الدخول.";
-  if (/already registered|already been registered|user_already_exists/i.test(msg)) return "هذا البريد مسجّل من قبل. سجّل الدخول بدلًا من إنشاء حساب.";
-  if (/password.*(least|short|weak|characters)|weak_password/i.test(msg)) return "كلمة المرور ضعيفة. استخدم ٨ أحرف على الأقل.";
-  if (/valid email|invalid.*email|email.*invalid/i.test(msg)) return "اكتب بريدًا إلكترونيًا صحيحًا.";
-  if (/provider is not enabled|unsupported provider/i.test(msg)) return "الدخول بواسطة Google غير مفعّل بعد في إعدادات المشروع.";
+  if (/invalid|expired|token/i.test(msg)) return "رمز التحقق غير صحيح أو انتهت صلاحيته.";
   if (status === 429 || /rate limit|too many|security purposes/i.test(msg)) return "محاولات كثيرة. انتظر دقيقة ثم أعد المحاولة.";
+  if (/phone|sms|provider|twilio/i.test(msg)) return "تعذّر إرسال رسالة التحقق إلى هذا الرقم. تأكد من الرقم وحاول مجددًا.";
   if (/failed to fetch|network/i.test(msg)) return "تعذّر الاتصال بالإنترنت. تحقق من الشبكة وأعد المحاولة.";
   return "تعذّر تسجيل الدخول. أعد المحاولة.";
 }
 
 async function run(query) {
   const { data, error } = await query;
-  if (error) throw new ApiError(humanize(error), error.code, error.message);
+  if (error) throw new ApiError(humanize(error), error.code);
   return data;
 }
 
 // ───────────── الجلسة والحساب ─────────────
-const appUrl = () => window.location.origin + window.location.pathname;
-const fail = (error) => { if (error) throw new ApiError(humanizeAuth(error), error.status, error.message); };
-
-// إنشاء حساب بالبريد وكلمة المرور. الاسم يُحفظ في الملف الشخصي تلقائيًا عبر trigger في القاعدة.
-// يعيد { session, needsConfirm }: إن كان تأكيد البريد مفعّلًا في Supabase لا تُنشأ جلسة حتى يؤكد المستخدم.
-export async function signUpEmail({ email, password, name }) {
-  const { data, error } = await supabase.auth.signUp({
-    email, password, options: { data: { full_name: name }, emailRedirectTo: appUrl() },
-  });
-  fail(error);
-  // بريد مسجّل مسبقًا: Supabase يعيد مستخدمًا بلا هويات بدل خطأ (لمنع كشف الحسابات)
-  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
-    throw new ApiError("هذا البريد مسجّل من قبل. سجّل الدخول بدلًا من إنشاء حساب.");
-  return { session: data.session, needsConfirm: !data.session };
+export async function sendOtp(e164, captchaToken) {
+  const options = { shouldCreateUser: true, channel: "sms" };
+  if (captchaToken) options.captchaToken = captchaToken; // اختياري: يُفعَّل مع Cloudflare Turnstile لمنع إساءة استخدام الرسائل
+  const { error } = await supabase.auth.signInWithOtp({ phone: e164, options });
+  if (error) throw new ApiError(humanizeAuth(error), error.status);
 }
-export async function signInEmail({ email, password }) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  fail(error);
+export async function verifyOtp(e164, token) {
+  const { data, error } = await supabase.auth.verifyOtp({ phone: e164, token, type: "sms" });
+  if (error) throw new ApiError(humanizeAuth(error), error.status);
   return data.session;
-}
-export async function signInWithGoogle(options) {
-  const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: options || { redirectTo: appUrl() } });
-  fail(error);
-  return data;
-}
-export async function sendPasswordReset(email) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: appUrl() });
-  fail(error);
-}
-export async function updatePassword(password) {
-  const { error } = await supabase.auth.updateUser({ password });
-  fail(error);
 }
 export async function getSession() {
   const { data } = await supabase.auth.getSession();
   return data.session;
 }
 export function onAuthChange(cb) {
-  const { data } = supabase.auth.onAuthStateChange((event, session) => cb(session, event));
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => cb(session));
   return () => data.subscription.unsubscribe();
 }
 export const signOut = () => supabase.auth.signOut();
@@ -121,16 +88,7 @@ export async function deleteMyAccount(uid) {
     const { data } = await supabase.storage.from("business-photos").list(uid, { limit: 100 });
     if (data?.length) await supabase.storage.from("business-photos").remove(data.map((f) => `${uid}/${f.name}`));
   } catch { /* لا نمنع الحذف بسبب الصور */ }
-  try { // إيصالات الدفع (خاصة)
-    const { data } = await supabase.storage.from("receipts").list(uid, { limit: 100 });
-    if (data?.length) await supabase.storage.from("receipts").remove(data.map((f) => `${uid}/${f.name}`));
-  } catch { /* لا نمنع الحذف */ }
-  const { error } = await supabase.rpc("delete_my_account");
-  if (error) {
-    if (/last_admin/.test(error.message || "")) throw new ApiError("أنت المشرف الوحيد، عيّن مشرفًا آخر قبل حذف حسابك.", error.code, error.message);
-    if (error.code === "PGRST202" || /could not find the function/i.test(error.message || "")) throw new ApiError("ميزة حذف الحساب غير مفعّلة بعد على الخادم. تواصل مع المطوّر.", error.code, error.message);
-    throw new ApiError(humanize(error), error.code, error.message);
-  }
+  await run(supabase.rpc("delete_my_account"));
   await supabase.auth.signOut().catch(() => {});
 }
 
@@ -184,53 +142,6 @@ export async function removePhotos(paths) {
   if (paths?.length) await supabase.storage.from(BUCKET).remove(paths);
 }
 
-// ───────────── المنتجات (الكتالوج) ─────────────
-export const listProducts = (businessId) =>
-  run(supabase.from("products_public").select("*").eq("business_id", businessId).order("sort_order").order("created_at"));
-export const listMyProducts = (businessId) =>
-  run(supabase.from("products").select("*").eq("business_id", businessId).order("sort_order").order("created_at"));
-export const createProduct = (p) => run(supabase.from("products").insert(p).select().single());
-export const updateProduct = (id, patch) => run(supabase.from("products").update(patch).eq("id", id).select().single());
-export const deleteProduct = (id) => run(supabase.from("products").delete().eq("id", id));
-
-// ───────────── طرق الدفع ─────────────
-export const getPaymentMethods = (businessId) =>
-  run(supabase.from("payment_methods_public").select("*").eq("business_id", businessId).maybeSingle());
-export const getMyPayments = (businessId) =>
-  run(supabase.from("business_payments").select("*").eq("business_id", businessId).maybeSingle());
-export async function savePayments(businessId, fields, exists) {
-  const f = { ...fields, updated_at: new Date().toISOString() };
-  if (exists) return run(supabase.from("business_payments").update(f).eq("business_id", businessId));
-  const { updated_at, ...ins } = f; // eslint-disable-line no-unused-vars
-  return run(supabase.from("business_payments").insert({ business_id: businessId, ...ins }));
-}
-
-// ───────────── الطلبات (الشراء) ─────────────
-const RECEIPTS = "receipts";
-export async function uploadReceipt(uid, blob) {
-  const path = `${uid}/${crypto.randomUUID()}.jpg`;
-  const { error } = await supabase.storage.from(RECEIPTS).upload(path, blob, { contentType: "image/jpeg", upsert: false });
-  if (error) throw new ApiError(humanize(error), error.statusCode);
-  return path;
-}
-export async function receiptUrl(path) {
-  const { data, error } = await supabase.storage.from(RECEIPTS).createSignedUrl(path, 3600);
-  if (error) throw new ApiError("تعذّر عرض الإيصال.", error.statusCode);
-  return data.signedUrl;
-}
-export async function removeReceipts(paths) {
-  if (paths?.length) await supabase.storage.from(RECEIPTS).remove(paths);
-}
-export const createOrder = (fields) => run(supabase.from("orders").insert(fields).select().single());
-export const getOrder = (id) => run(supabase.from("orders").select("*").eq("id", id).maybeSingle());
-export const listMyOrders = (uid) =>
-  run(supabase.from("orders").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(100));
-export const listIncomingOrders = (businessIds) =>
-  businessIds.length
-    ? run(supabase.from("orders").select("*").in("business_id", businessIds).order("created_at", { ascending: false }).limit(200))
-    : Promise.resolve([]);
-export const updateOrder = (id, patch) => run(supabase.from("orders").update(patch).eq("id", id).select().single());
-
 // ───────────── التقييمات ─────────────
 export const listReviews = (businessId) =>
   run(supabase.from("reviews_public").select("*").eq("business_id", businessId).order("created_at", { ascending: false }).limit(50));
@@ -252,7 +163,7 @@ export async function listFavoriteIds() {
 export async function setFavorite(businessId, on) {
   if (on) {
     const { error } = await supabase.from("favorites").insert({ business_id: businessId });
-    if (error && error.code !== "23505") throw new ApiError(humanize(error), error.code, error.message);
+    if (error && error.code !== "23505") throw new ApiError(humanize(error), error.code);
   } else {
     await run(supabase.from("favorites").delete().eq("business_id", businessId));
   }
@@ -297,7 +208,7 @@ export const listNotifications = () =>
   run(supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(50));
 export async function countUnreadNotifications() {
   const { count, error } = await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("is_read", false);
-  if (error) throw new ApiError(humanize(error), error.code, error.message);
+  if (error) throw new ApiError(humanize(error), error.code);
   return count || 0;
 }
 export const markAllNotificationsRead = () => run(supabase.from("notifications").update({ is_read: true }).eq("is_read", false));
@@ -309,20 +220,6 @@ export function subscribeNotifications(uid, onInsert) {
     .subscribe();
   return () => supabase.removeChannel(ch);
 }
-
-// ───────────── اشتراكات الإشعارات الفورية ─────────────
-export async function savePushSubscription(uid, sub) {
-  const k = sub.keys || {};
-  if (!sub.endpoint || !k.p256dh || !k.auth) throw new ApiError("بيانات الاشتراك ناقصة");
-  const row = { user_id: uid, endpoint: sub.endpoint, p256dh: k.p256dh, auth: k.auth, user_agent: (navigator.userAgent || "").slice(0, 300) };
-  // نحذف أي اشتراك لنفس الجهاز على حسابنا ثم نضيفه (بدون upsert لتجنّب تعارض RLS)
-  await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
-  return run(supabase.from("push_subscriptions").insert(row));
-}
-// OneSignal: ربط معرف الجهاز بالمستخدم الحالي فقط (دالة آمنة على الخادم تنقل الجهاز لو كان على حساب سابق)
-export const linkOneSignalPlayer = (playerId) => run(supabase.rpc("link_onesignal_player", { p_player: playerId }));
-export const deleteOneSignalPlayer = (playerId) => run(supabase.from("onesignal_players").delete().eq("player_id", playerId));
-export const deletePushSubscription = (endpoint) => run(supabase.from("push_subscriptions").delete().eq("endpoint", endpoint));
 
 // ───────────── البلاغات ─────────────
 export const reportTarget = ({ type, id, reason, details }) =>

@@ -2,13 +2,14 @@
   "name": "midum-wasta",
   "version": "1.0.0",
   "private": true,
+  "engines": { "node": ">=18" },
   "type": "module",
   "description": "ميدوم والواسطي — دليل محلي لأهالي مركزي ميدوم والواسطى",
   "scripts": {
-    "start": "vite",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:db": "bash supabase/tests/run.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

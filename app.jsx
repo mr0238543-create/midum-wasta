@@ -1,10 +1,6 @@
 // سياق التطبيق: الجلسة، الحساب، الأقسام والقرى، المفضلة، الإشعارات، الإشعارات المنبثقة والحوارات
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import * as api from "./api";
-import { releasePush, syncPush } from "./push";
-import { playNotifySound, unlockSound } from "./sound";
-import IosBanner from "./IosBanner";
-import { PushPrompt } from "./PushCard";
 import { go } from "./router";
 import Icon from "./icons";
 
@@ -43,8 +39,7 @@ export function AppProvider({ children }) {
     }
   }, []);
   useEffect(() => { loadPublic(); }, [loadPublic]);
-  useEffect(() => { unlockSound(); }, []);
-  useEffect(() => api.onAuthChange((s, ev) => { setSession(s); if (ev === "PASSWORD_RECOVERY") go("/login?mode=reset"); }), []);
+  useEffect(() => api.onAuthChange((s) => setSession(s)), []);
 
   const uid = session?.user?.id || null;
 
@@ -60,11 +55,9 @@ export function AppProvider({ children }) {
         setProfile(p); setFavIds(new Set(favs)); setUnread(n);
       } catch { /* تبقى الشاشة تعمل، والخطأ يظهر في الشاشات المعنية */ }
     })();
-    syncPush(uid);
     const off = api.subscribeNotifications(uid, (n) => {
       setUnread((c) => c + 1);
       toast(n.title);
-      playNotifySound(n.kind === "order_new" ? "order" : "normal");
     });
     return () => { alive = false; off(); };
   }, [uid, session === undefined, toast]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -90,7 +83,6 @@ export function AppProvider({ children }) {
   }, [favIds, requireLogin, toast]);
 
   const logout = useCallback(async () => {
-    await releasePush();
     await api.signOut();
     setSession(null);
     go("/", { replace: true });
@@ -115,8 +107,6 @@ export function AppProvider({ children }) {
       {children}
       {toastState && <div className={`toast ${toastState.tone === "bad" ? "bad" : ""}`} role="status">{toastState.message}</div>}
       {dialog && <Dialog dialog={dialog} onClose={closeDialog} />}
-      <IosBanner />
-      <PushPrompt />
     </Ctx.Provider>
   );
 }

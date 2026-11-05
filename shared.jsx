@@ -1,10 +1,10 @@
 import { useState } from "react";
-import Icon from "./icons";
-import { Sheet, Field } from "./ui";
-import { useApp } from "./app";
-import * as api from "./api";
-import { REPORT_REASONS } from "./util";
-import { setArea, useArea } from "./area";
+import Icon from "../icons";
+import { Sheet, Field } from "../ui";
+import { useApp } from "../app";
+import * as api from "../api";
+import { REPORT_REASONS } from "../util";
+import { setArea, useArea } from "../area";
 
 export function AreaSheet({ onClose }) {
   const { villages } = useApp();

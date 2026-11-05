@@ -1,13 +1,11 @@
 import { useRef, useState } from "react";
-import Icon from "./icons";
-import { useApp } from "./app";
-import { go } from "./router";
-import * as api from "./api";
-import { Empty, ErrorBox, Field, Header, Loading, StatusBadge, Async, Thumb, useAsync } from "./ui";
-import { useGeo } from "./geo";
-import { ProductsEditor, syncProducts, toItem } from "./Products";
-import { PaymentSettingsEditor, paymentsToFields, toPaymentForm, validatePayments } from "./Orders";
-import { BUSINESS_STATUS, inEgypt, isValidPhone, normalizePhone, osmEmbedUrl, parseLatLng, processImage, timeAgo, toAr } from "./util";
+import Icon from "../icons";
+import { useApp } from "../app";
+import { go } from "../router";
+import * as api from "../api";
+import { Empty, ErrorBox, Field, Header, Loading, StatusBadge, Async, Thumb, useAsync } from "../ui";
+import { useGeo } from "../geo";
+import { BUSINESS_STATUS, inEgypt, isValidPhone, normalizePhone, osmEmbedUrl, parseLatLng, processImage, timeAgo, toAr } from "../util";
 
 const MAX_PHOTOS = 5;
 const EMPTY = {
@@ -30,7 +28,7 @@ function validate(f, agree, isNew) {
   return e;
 }
 
-function Form({ initial, id, initialProducts, initialPayments }) {
+function Form({ initial, id }) {
   const { uid, categories, villages, toast } = useApp();
   const isNew = !id;
   const [f, setF] = useState(() => (initial ? {
@@ -39,10 +37,6 @@ function Form({ initial, id, initialProducts, initialPayments }) {
   } : { ...EMPTY }));
   const [photos, setPhotos] = useState(() => (initial?.photos || []).map((p) => ({ path: p, url: api.photoUrl(p) })));
   const [removed, setRemoved] = useState([]);
-  const [products, setProducts] = useState(() => (initialProducts || []).map(toItem));
-  const [removedProducts, setRemovedProducts] = useState([]);
-  const [payments, setPayments] = useState(() => toPaymentForm(initialPayments));
-  const [payErrors, setPayErrors] = useState({});
   const [agree, setAgree] = useState(false);
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
@@ -90,9 +84,7 @@ function Form({ initial, id, initialProducts, initialPayments }) {
     e.preventDefault();
     const errs = validate(f, agree, isNew);
     setErrors(errs);
-    const perrs = validatePayments(payments);
-    setPayErrors(perrs);
-    if (Object.keys(errs).length || Object.keys(perrs).length) { toast("راجع الحقول المطلوبة.", "bad"); return; }
+    if (Object.keys(errs).length) { toast("راجع الحقول المطلوبة.", "bad"); return; }
     setBusy(true);
     const uploaded = [];
     try {
@@ -103,28 +95,15 @@ function Form({ initial, id, initialProducts, initialPayments }) {
         description: f.description.trim(), phone: normalizePhone(f.phone), address: f.address.trim(), hours: f.hours.trim(),
         lat: f.lat, lng: f.lng, show_phone: f.show_phone, show_address: f.show_address, photos: paths,
       };
-      let bId = id;
-      let msg;
       if (isNew) {
-        const row = await api.createBusiness(fields);
-        bId = row.id;
-        msg = "تم إرسال نشاطك للمراجعة. سنخبرك فور الموافقة.";
+        await api.createBusiness(fields);
+        toast("تم إرسال نشاطك للمراجعة. سنخبرك فور الموافقة.");
       } else {
         const resubmit = ["rejected", "changes_requested"].includes(initial.status);
         const row = await api.updateBusiness(id, resubmit ? { ...fields, status: "pending" } : fields);
         if (removed.length) api.removePhotos(removed);
-        msg = row.status === "pending" ? "تم الحفظ، وسيُراجَع نشاطك قبل ظهوره من جديد." : "تم حفظ التعديلات.";
+        toast(row.status === "pending" ? "تم الحفظ، وسيُراجَع نشاطك قبل ظهوره من جديد." : "تم حفظ التعديلات.");
       }
-      uploaded.length = 0; // صور النشاط حُفظت فلا تُحذف عند فشل المنتجات
-      try {
-        await syncProducts({ uid, businessId: bId, items: products, removed: removedProducts });
-        await api.savePayments(bId, paymentsToFields(payments), Boolean(initialPayments));
-      } catch (perr) {
-        toast(`تم حفظ النشاط لكن تعذّر حفظ المنتجات أو طرق الدفع: ${perr.message}`, "bad");
-        go(`/my/${bId}`, { replace: true });
-        return;
-      }
-      toast(msg);
       go("/my", { replace: true });
     } catch (err) {
       if (uploaded.length) api.removePhotos(uploaded);
@@ -207,9 +186,6 @@ function Form({ initial, id, initialProducts, initialPayments }) {
               <textarea className={`input ${errors.description ? "bad" : ""}`} rows={4} maxLength={1000} value={f.description} onChange={set("description")} placeholder="اكتب ما تقدمه وما يميّزك" />
             </Field>
 
-            <ProductsEditor items={products} setItems={setProducts} onRemove={(x) => setRemovedProducts((r) => [...r, x])} />
-            <PaymentSettingsEditor value={payments} onChange={(v) => { setPayments(v); setPayErrors({}); }} errors={payErrors} />
-
             <Field multi label="الموقع على الخريطة (اختياري)" error={mapErr}>
               <div className="col" style={{ gap: 8 }}>
                 <button type="button" className="btn soft" onClick={useMyLocation} disabled={geo.busy}>
@@ -250,13 +226,13 @@ function Form({ initial, id, initialProducts, initialPayments }) {
 }
 
 export function BusinessForm({ id }) {
-  const st = useAsync(async () => (id ? { biz: await api.getMyBusiness(id), products: await api.listMyProducts(id), payments: await api.getMyPayments(id) } : null), [id]);
+  const st = useAsync(() => (id ? api.getMyBusiness(id) : Promise.resolve(null)), [id]);
   if (id) {
     if (st.loading && !st.data) return <div className="screen"><Header title="تعديل النشاط" backTo="/my" /><Loading /></div>;
     if (st.error) return <div className="screen"><Header title="تعديل النشاط" backTo="/my" /><ErrorBox error={st.error} onRetry={st.reload} /></div>;
-    if (!st.data?.biz) return <div className="screen"><Header title="تعديل النشاط" backTo="/my" /><Empty icon="🔎" title="لم نجد هذا النشاط" /></div>;
+    if (!st.data) return <div className="screen"><Header title="تعديل النشاط" backTo="/my" /><Empty icon="🔎" title="لم نجد هذا النشاط" /></div>;
   }
-  return <Form key={id || "new"} id={id} initial={st.data?.biz || null} initialProducts={st.data?.products || []} initialPayments={st.data?.payments || null} />;
+  return <Form key={id || "new"} id={id} initial={st.data} />;
 }
 
 // ───────────── أنشطتي ─────────────

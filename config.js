@@ -1,12 +1,12 @@
-// إعدادات المشروع (بديل ملف .env لأن StackBlitz لا يحفظ الملفات المخفية بعد إعادة الفتح من GitHub).
-// المفتاح هنا anon العام فقط، وهو مصمم ليظهر في المتصفح؛ الأمان الحقيقي من سياسات RLS في قاعدة البيانات.
-// لا تضع service_role هنا أبدًا.
-export const DEFAULTS = {
-  SUPABASE_URL: "https://hjorwlxnpzchzvqiojxr.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqb3J3bHhucHpjaHp2cWlvanhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNDQxNTAsImV4cCI6MjEwNzcyMDE1MH0.GC-9lm28XC04vHjaN3SzuF1XRY8K3wCtXBGbZZz1HhM",
-  // المفتاح العام لإشعارات Web Push (VAPID). المفتاح الخاص محفوظ في قاعدة البيانات فقط.
-  VAPID_PUBLIC_KEY: "BJf3Uj25qDjo29UxtHayYg5EKe3-_TYH6k3n8DEaBTmx9gAYK9cXK0C3-UX3WgFdVQnhl5IzQ_KqEkp_hfvJthA",
-  // اختياري: لو أنشأت تطبيقًا في OneSignal ضع الـ App ID هنا (وإلا يستخدم التطبيق Web Push المباشر).
-  ONESIGNAL_APP_ID: "2b7b8007-ebe9-4033-95d6-4da8a863e25c",
-  CONTACT_EMAIL: "mr0238543@gmail.com",
-};
+// إعدادات التطبيق من متغيّرات البيئة (Vercel ← Settings ← Environment Variables، أو ملف .env.local محليًا).
+// المفتاح هنا هو anon العام فقط؛ لا تضع service_role في الواجهة أبدًا.
+const env = import.meta.env;
+
+export const SUPABASE_URL = env.VITE_SUPABASE_URL || "";
+export const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY || "";
+export const CONTACT_EMAIL = env.VITE_CONTACT_EMAIL || "";
+export const TURNSTILE_SITE_KEY = env.VITE_TURNSTILE_SITE_KEY || "";
+
+export const isConfigured = Boolean(
+  SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes("YOUR-PROJECT")
+);

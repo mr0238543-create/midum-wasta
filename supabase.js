@@ -1,17 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
-import { DEFAULTS } from "./config";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, CONTACT_EMAIL, isConfigured } from "./config";
 
-export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || DEFAULTS.SUPABASE_URL;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULTS.SUPABASE_ANON_KEY;
-export const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || DEFAULTS.CONTACT_EMAIL || "";
+export { SUPABASE_URL, CONTACT_EMAIL, isConfigured };
 
-// يُعرض شاشة إعداد واضحة بدل انهيار التطبيق إن لم تُضبط المتغيّرات
-export const isConfigured = Boolean(SUPABASE_URL && ANON_KEY && !SUPABASE_URL.includes("YOUR-PROJECT"));
-
-// المفتاح هنا هو anon العام فقط؛ الأمان الفعلي من سياسات قاعدة البيانات (RLS).
+// يُعرض شاشة إعداد واضحة بدل انهيار التطبيق إن لم تُضبط المتغيّرات.
+// الأمان الفعلي من سياسات قاعدة البيانات (RLS).
 export const supabase = isConfigured
-  ? createClient(SUPABASE_URL, ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" },
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
       realtime: { params: { eventsPerSecond: 5 } },
     })
   : null;

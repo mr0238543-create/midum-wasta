@@ -1,7 +1,3 @@
-> **نسخة مسطّحة (بدون مجلدات):** كل الملفات في المستوى الأعلى عشان تشتغل على StackBlitz بعد رفعها بدون فولدرات.
-> الـ imports بقت `./ملف`، ومسار الدخول في `index.html` بقى `/main.jsx`، و`vite.config.js` بيخدم `icon.svg` و`manifest.webmanifest` من الجذر.
-> للتشغيل: `npm install` ثم `npm run dev`. ولربط Supabase انسخ `.env.example` إلى `.env.local` واملأ القيم.
-
 # ميدوم والواسطي
 
 دليل محلي لأهالي مركزي ميدوم والواسطى: أنشطة، وظائف، تقييمات، محادثات، وطلبات خدمة.
@@ -12,8 +8,9 @@
 | الحاجة | لماذا | ملاحظة |
 |---|---|---|
 | مشروع Supabase | قاعدة البيانات والدخول والصور | الخطة المجانية تكفي للبداية |
-| (اختياري) Google Cloud OAuth | زر الدخول بواسطة Google | مجاني. راجع الخطوة ٣ |
+| مزوّد SMS (مثل Twilio) | رسائل رمز التحقق الحقيقية | مدفوع حسب الاستخدام. بدونه استخدم أرقام الاختبار فقط |
 | استضافة ثابتة (Netlify / Vercel / Cloudflare Pages) | نشر الواجهة | أي استضافة ملفات ثابتة |
+| Cloudflare Turnstile (اختياري) | حماية من إساءة استخدام SMS | يُفعَّل بمفتاح واحد |
 
 ## الإعداد خطوة بخطوة
 
@@ -21,17 +18,14 @@
 2. **شغّل ملفات قاعدة البيانات** من SQL Editor بالترتيب:
    1. `supabase/migrations/20261015000000_init.sql`
    2. `supabase/migrations/20261015000100_account_deletion.sql`
-   3. `supabase/migrations/20261017000000_products.sql` (كتالوج المنتجات)
-   4. `supabase/migrations/20261018000000_orders.sql` (الطلبات وطرق الدفع وإيصالات التحويل)
-   5. `supabase/seed.sql` (الأقسام والقرى)
+   3. `supabase/seed.sql` (الأقسام والقرى)
    - أسماء القرى في `seed.sql` مبدئية؛ راجعها وعدّلها من لوحة المشرف (تبويب «القرى») بعد أول دخول.
-3. **فعّل الدخول**: Authentication ← Providers:
-   - **Email**: مفعّل افتراضيًا. للتجربة السريعة أوقف «Confirm email»، وللإطلاق الحقيقي اتركه مفعّلًا.
-   - **Google** (اختياري): أنشئ OAuth Client (نوع Web) من Google Cloud Console، وضع في «Authorized redirect URIs» الرابط الظاهر في صفحة Google داخل Supabase (`https://<project>.supabase.co/auth/v1/callback`)، ثم الصق Client ID وSecret في Supabase وفعّله.
-   - Authentication ← URL Configuration: ضع رابط موقعك في Site URL وفي Redirect URLs.
+3. **فعّل الدخول بالهاتف**: Authentication ← Providers ← Phone ← Enable. اختر مزوّد SMS وأدخل بياناته. اجعل طول الرمز ٦ أرقام.
+   - للتجربة بلا SMS: في نفس الصفحة أضف «Test Phone Numbers» (مثل `201000000001=123456`).
 4. **المتغيرات**: انسخ `.env.example` إلى `.env.local` واملأ:
    - `VITE_SUPABASE_URL` و `VITE_SUPABASE_ANON_KEY` (مفتاح **anon** العام فقط. لا تضع `service_role` في الواجهة أبدًا).
    - `VITE_CONTACT_EMAIL`: بريد حقيقي تراقبه (يظهر في الخصوصية والشروط).
+   - `VITE_TURNSTILE_SITE_KEY` (اختياري). وفعّل نفس الحماية في Supabase ← Authentication ← Attack Protection.
 5. **أول مشرف**: سجّل الدخول مرة بالتطبيق برقمك، ثم نفّذ في SQL Editor:
    ```sql
    update profiles set role = 'admin' where phone = '2010XXXXXXXX';
@@ -50,20 +44,6 @@
    ارفع `dist/` للاستضافة وأضف المتغيرات نفسها في إعدادات الاستضافة. أضف رابط الموقع في Supabase ← Authentication ← URL Configuration.
    التطبيق يستخدم روابط `#/` فلا يحتاج إعادة توجيه خاصة.
 9. **تطبيق جوال (اختياري)**: يمكن تغليف `dist/` بـ Capacitor. لم يُجرَّب.
-
-## الإشعارات الفورية (Web Push)
-- عند وصول أي إشعار لمستخدم (طلب شراء جديد، رسالة، تحديث طلب…) تُرسله قاعدة البيانات تلقائيًا إلى دالة `send-push` على Supabase، فيظهر على هاتفه حتى لو التطبيق مغلق.
-- الملفات: `sw.js` (يستقبل ويعرض الإشعار)، `push.js` و`PushCard.jsx` (زر التفعيل)، و`20261019000000_push.sql` (الجداول والـ trigger).
-- بعد تشغيل الملف السابق أضف إعداداتك السرية مرة واحدة (غيّر القيم): `insert into push_config(key,value) values ('function_url','https://<project>.supabase.co/functions/v1/send-push'),('secret','<سر عشوائي>'),('vapid_public','...'),('vapid_private','...'),('vapid_subject','https://موقعك');` ثم انشر الدالة `send-push` (verify_jwt=false) وضع المفتاح العام نفسه في `config.js` (`VAPID_PUBLIC_KEY`).
-- على iPhone تعمل الإشعارات فقط بعد «إضافة إلى الشاشة الرئيسية».
-
-## حذف الحساب (خطوة واحدة على الخادم)
-زر «حذف حسابي» في صفحة الحساب جاهز، لكنه يحتاج الدالة `delete_my_account`. افتح Supabase ← SQL Editor، والصق محتوى `20261015000100_account_deletion.sql` واضغط Run (مرة واحدة). لا يُسمح بحذف آخر مشرف.
-
-## التنبيه الصوتي وإرشاد iPhone
-- `sound.js`: نغمة عند وصول إشعار جديد والتطبيق مفتوح (نغمة أطول لطلب شراء جديد)، ويمكن إيقافها من الحساب.
-- `IosBanner.jsx`: بنر بخطوات «إضافة إلى الشاشة الرئيسية» يظهر لمستخدمي iPhone فقط.
-- إشعارات حالة الطلب للعميل (تمت الموافقة / جاري التوصيل / مكتمل) تُرسل تلقائيًا من قاعدة البيانات.
 
 ## ما الذي يفعله التطبيق
 
@@ -85,7 +65,7 @@
 
 **لم يُختبر (لا يمكن من بيئة التطوير هذه):**
 - التشغيل مقابل **مشروع Supabase حقيقي** (ربط `src/api.js` بالخدمة الفعلية). اختُبر الجزء الخاص بقاعدة البيانات فقط، لكن استدعاءات `supabase-js` نفسها لم تُجرَّب.
-- **الدخول بالبريد وGoogle** على Supabase الحقيقي (اختبارات `e2e.mjs` و`mock-api.js` ما زالت تحاكي الدخول القديم بالهاتف وتحتاج تحديثًا)، وحدود المعدل في Supabase Auth.
+- **رسائل SMS الحقيقية** ومزوّد الرسائل، وحدود المعدل في Supabase Auth.
 - **Cloudflare Turnstile**.
 - **Realtime الفعلي** للمحادثات (اختُبر السلوك على محاكاة).
 - **رفع الصور الفعلي** إلى Storage. ضغط الصور والتحقق من النوع والحجم اختُبرا في المتصفح فقط.

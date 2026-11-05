@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import Icon from "./icons";
-import { useApp } from "./app";
-import { go, qs, useHash } from "./router";
-import * as api from "./api";
-import { BusinessCard, Empty, ErrorBox, Header, Loading, Sheet, Field } from "./ui";
-import { areaLabel, areaParams, useArea } from "./area";
-import { useGeo } from "./geo";
-import { toAr } from "./util";
+import Icon from "../icons";
+import { useApp } from "../app";
+import { go, qs, useHash } from "../router";
+import * as api from "../api";
+import { BusinessCard, Empty, ErrorBox, Header, Loading, Sheet, Field } from "../ui";
+import { areaLabel, areaParams, useArea } from "../area";
+import { useGeo } from "../geo";
+import { toAr } from "../util";
 import { AreaSheet } from "./shared";
 
 const PAGE = 20;
@@ -91,7 +91,7 @@ export default function Search() {
           : state.rows.length === 0 ? (
             <Empty title="لا توجد نتائج مطابقة" text="جرّب كلمة أخرى، أو غيّر المنطقة والتصفية."
               action={(area.region !== "all" || area.village || activeFilters) && (
-                <button className="btn soft" onClick={() => { import("./area").then((m) => m.setArea({ region: "all", village: null })); go(`/search${qs({ q: query.q, cat: query.cat })}`, { replace: true }); }}>عرض كل المناطق</button>
+                <button className="btn soft" onClick={() => { import("../area").then((m) => m.setArea({ region: "all", village: null })); go(`/search${qs({ q: query.q, cat: query.cat })}`, { replace: true }); }}>عرض كل المناطق</button>
               )} />
           ) : (
             <div className="col">

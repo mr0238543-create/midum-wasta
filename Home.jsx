@@ -1,10 +1,10 @@
 import { useState } from "react";
-import Icon from "./icons";
-import { useApp } from "./app";
-import { go, qs } from "./router";
-import * as api from "./api";
-import { Async, BusinessCard, Empty, useAsync } from "./ui";
-import { areaLabel, areaParams, useArea } from "./area";
+import Icon from "../icons";
+import { useApp } from "../app";
+import { go, qs } from "../router";
+import * as api from "../api";
+import { Async, BusinessCard, Empty, useAsync } from "../ui";
+import { areaLabel, areaParams, useArea } from "../area";
 import { AreaSheet } from "./shared";
 
 export function openCategory(c) {

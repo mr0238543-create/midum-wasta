@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import Icon from "../icons";
-import { useApp } from "../app";
-import { go, useHash } from "../router";
-import * as api from "../api";
-import { Field, Loading } from "../ui";
-import { TURNSTILE_SITE_KEY } from "../config";
-import { isEgMobile, normalizePhone, toAr, toE164, toLatinDigits } from "../util";
+import Icon from "./icons";
+import { useApp } from "./app";
+import { go, useHash } from "./router";
+import * as api from "./api";
+import { Field, Loading } from "./ui";
+import { TURNSTILE_SITE_KEY } from "./config";
+import { isEgMobile, normalizePhone, toAr, toE164, toLatinDigits } from "./util";
 
 const SITE_KEY = TURNSTILE_SITE_KEY;
 const MAX_TRIES = 5;

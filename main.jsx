@@ -7,19 +7,19 @@ import { matchRoute, useHash, go } from "./router";
 import * as api from "./api";
 import Icon from "./icons";
 import { ErrorBox, Loading, RequireAdmin, RequireAuth } from "./ui";
-import { Setup } from "./screens/Setup";
-import Home from "./screens/Home";
-import Search from "./screens/Search";
-import Login from "./screens/Login";
-import Business from "./screens/Business";
-import { BusinessForm, MyBusinesses } from "./screens/BusinessForm";
-import Requests, { RequestDetail } from "./screens/Requests";
-import Chats, { Chat } from "./screens/Chats";
-import { Categories, Favorites, Notifications } from "./screens/Lists";
-import Account from "./screens/Account";
-import Jobs, { JobForm, MyJobs } from "./screens/Jobs";
-import Admin from "./screens/Admin";
-import { Privacy, Terms } from "./screens/Legal";
+import { Setup } from "./Setup";
+import Home from "./Home";
+import Search from "./Search";
+import Login from "./Login";
+import Business from "./Business";
+import { BusinessForm, MyBusinesses } from "./BusinessForm";
+import Requests, { RequestDetail } from "./Requests";
+import Chats, { Chat } from "./Chats";
+import { Categories, Favorites, Notifications } from "./Lists";
+import Account from "./Account";
+import Jobs, { JobForm, MyJobs } from "./Jobs";
+import Admin from "./Admin";
+import { Privacy, Terms } from "./Legal";
 
 // auth: يتطلب تسجيل الدخول — admin: للمشرفين — tab: التبويب المفعّل — bare: بلا شريط سفلي
 const ROUTES = [

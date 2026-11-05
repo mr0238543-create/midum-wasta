@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
-import Icon from "../icons";
-import { useApp } from "../app";
-import { go } from "../router";
-import * as api from "../api";
-import { Empty, ErrorBox, Field, Header, Loading, StatusBadge, Async, Thumb, useAsync } from "../ui";
-import { useGeo } from "../geo";
-import { BUSINESS_STATUS, inEgypt, isValidPhone, normalizePhone, osmEmbedUrl, parseLatLng, processImage, timeAgo, toAr } from "../util";
+import Icon from "./icons";
+import { useApp } from "./app";
+import { go } from "./router";
+import * as api from "./api";
+import { Empty, ErrorBox, Field, Header, Loading, StatusBadge, Async, Thumb, useAsync } from "./ui";
+import { useGeo } from "./geo";
+import { BUSINESS_STATUS, inEgypt, isValidPhone, normalizePhone, osmEmbedUrl, parseLatLng, processImage, timeAgo, toAr } from "./util";
 
 const MAX_PHOTOS = 5;
 const EMPTY = {

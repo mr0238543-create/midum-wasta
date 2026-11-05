@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import Icon from "../icons";
-import { useApp } from "../app";
-import { go } from "../router";
-import * as api from "../api";
-import { Async, Empty, ErrorBox, Header, Loading, TabHeader, useAsync } from "../ui";
-import { timeAgo, toAr } from "../util";
+import Icon from "./icons";
+import { useApp } from "./app";
+import { go } from "./router";
+import * as api from "./api";
+import { Async, Empty, ErrorBox, Header, Loading, TabHeader, useAsync } from "./ui";
+import { timeAgo, toAr } from "./util";
 
 export default function Chats() {
   const st = useAsync(() => api.myConversations(), []);

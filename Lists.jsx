@@ -1,11 +1,11 @@
-import { useApp } from "../app";
-import { go } from "../router";
-import * as api from "../api";
-import Icon from "../icons";
-import { Async, BusinessCard, Empty, Header, TabHeader, useAsync } from "../ui";
+import { useApp } from "./app";
+import { go } from "./router";
+import * as api from "./api";
+import Icon from "./icons";
+import { Async, BusinessCard, Empty, Header, TabHeader, useAsync } from "./ui";
 import { CategoryGrid, AddBanner } from "./Home";
-import { areaLabel, useArea } from "../area";
-import { timeAgo } from "../util";
+import { areaLabel, useArea } from "./area";
+import { timeAgo } from "./util";
 
 export function Categories() {
   const { villages } = useApp();

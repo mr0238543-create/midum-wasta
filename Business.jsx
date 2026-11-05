@@ -1,11 +1,11 @@
 import { useState } from "react";
-import Icon from "../icons";
-import { useApp } from "../app";
-import { back, go } from "../router";
-import * as api from "../api";
-import { Empty, ErrorBox, Field, Loading, Sheet, Stars, StarPicker, StatusBadge, useAsync } from "../ui";
+import Icon from "./icons";
+import { useApp } from "./app";
+import { back, go } from "./router";
+import * as api from "./api";
+import { Empty, ErrorBox, Field, Loading, Sheet, Stars, StarPicker, StatusBadge, useAsync } from "./ui";
 import { ReportSheet } from "./shared";
-import { BUSINESS_STATUS, directionsUrl, fmtRating, osmEmbedUrl, shareUrl, timeAgo, toAr } from "../util";
+import { BUSINESS_STATUS, directionsUrl, fmtRating, osmEmbedUrl, shareUrl, timeAgo, toAr } from "./util";
 
 function Row({ icon, label, children }) {
   return (

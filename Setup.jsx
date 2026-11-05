@@ -1,4 +1,4 @@
-import Icon from "../icons";
+import Icon from "./icons";
 
 // تظهر عندما لا تكون متغيّرات البيئة مضبوطة، بدل أن ينهار التطبيق بصمت
 export function Setup() {

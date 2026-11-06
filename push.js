@@ -1,75 +1,84 @@
-// الإشعارات الفورية (Web Push) من جهة المتصفح.
-import { DEFAULTS } from "./config";
+// إشعارات الهاتف عبر OneSignal (Web SDK v16). الإرسال نفسه يتم من قاعدة البيانات (trigger ← send-push ← OneSignal).
+// هنا فقط: تهيئة الـ SDK، طلب الإذن، وربط «معرّف الاشتراك» بحساب المستخدم عبر link_onesignal_player.
+import { useCallback, useEffect, useState } from "react";
+import { ONESIGNAL_APP_ID } from "./config";
 import * as api from "./api";
-import { oneSignalEnabled, osDisable, osEnable, osLink, osRelease, osState } from "./onesignal";
 
-const VAPID_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || DEFAULTS.VAPID_PUBLIC_KEY;
+const SDK = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+let started = false;
+let currentUid = null;
+const listeners = new Set();
+const notify = () => listeners.forEach((f) => f());
 
-const base = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-export const pushSupported = () => oneSignalEnabled() ? base() :
-  typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && !!VAPID_KEY;
+const supported = () => typeof window !== "undefined" && "Notification" in window && "serviceWorker" in navigator && !window.__mock;
 
-const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
-const isStandalone = () => window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
-// على iPhone تعمل الإشعارات فقط بعد "إضافة إلى الشاشة الرئيسية"
-export const needsInstall = () => isIOS() && !isStandalone();
-
-function keyBytes(b64) {
-  const p = "=".repeat((4 - (b64.length % 4)) % 4);
-  const raw = atob((b64 + p).replace(/-/g, "+").replace(/_/g, "/"));
-  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+function withSdk(fn) {
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(fn);
 }
 
-async function registration() {
-  const r = await navigator.serviceWorker.register("/sw.js");
-  await navigator.serviceWorker.ready;
-  return r;
+function boot() {
+  if (started || !supported() || !ONESIGNAL_APP_ID) return;
+  started = true;
+  const s = document.createElement("script");
+  s.src = SDK; s.defer = true; s.onerror = () => { started = false; };
+  document.head.appendChild(s);
+  withSdk(async (OS) => {
+    try {
+      await OS.init({
+        appId: ONESIGNAL_APP_ID,
+        serviceWorkerPath: "OneSignalSDKWorker.js",
+        notifyButton: { enable: false },
+        allowLocalhostAsSecureOrigin: true,
+      });
+      OS.User.PushSubscription.addEventListener("change", () => { link(OS); notify(); });
+      OS.Notifications.addEventListener("permissionChange", notify);
+      link(OS); notify();
+    } catch { /* نطاق غير مسموح في OneSignal أو SDK محجوب: لا نكسر التطبيق */ }
+  });
 }
 
-// "unsupported" | "install" | "denied" | "off" | "on"
-export async function pushState() {
-  if (needsInstall()) return "install";
-  if (!pushSupported()) return "unsupported";
-  if (Notification.permission === "denied") return "denied";
-  if (oneSignalEnabled()) { try { return await osState(); } catch { return "off"; } }
+function link(OS) {
+  const id = OS.User.PushSubscription.id;
+  if (id && OS.User.PushSubscription.optedIn && currentUid) api.linkOneSignalPlayer(id).catch(() => {});
+}
+
+// تُستدعى عند تغيّر المستخدم: التهيئة وربط الجهاز بالحساب إن كان الإذن ممنوحًا
+export function initPush(uid) {
+  currentUid = uid || null;
+  if (!uid) return;
+  boot();
+  withSdk((OS) => { try { link(OS); } catch { /* تجاهل */ } });
+}
+
+// عند الخروج: فك ربط هذا الجهاز بالحساب قبل إنهاء الجلسة
+export async function detachPush() {
+  currentUid = null;
+  if (!window.OneSignal?.User?.PushSubscription) return;
   try {
-    const r = await navigator.serviceWorker.getRegistration("/sw.js");
-    const s = r && (await r.pushManager.getSubscription());
-    return s && Notification.permission === "granted" ? "on" : "off";
-  } catch { return "off"; }
+    const id = window.OneSignal.User.PushSubscription.id;
+    if (id) await api.unlinkOneSignalPlayer(id);
+  } catch { /* تجاهل */ }
 }
 
-export async function enablePush(uid) {
-  if (!pushSupported()) throw new Error("متصفحك لا يدعم الإشعارات الفورية.");
-  if (oneSignalEnabled()) return osEnable(uid);
-  const perm = await Notification.requestPermission();
-  if (perm !== "granted") throw new Error("لم يتم السماح بالإشعارات. فعّلها من إعدادات المتصفح للموقع.");
-  const r = await registration();
-  const sub = (await r.pushManager.getSubscription()) ||
-    (await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID_KEY) }));
-  await api.savePushSubscription(uid, sub.toJSON());
-}
-
-export async function disablePush() {
-  if (oneSignalEnabled()) return osDisable();
-  const r = await navigator.serviceWorker.getRegistration("/sw.js");
-  const s = r && (await r.pushManager.getSubscription());
-  if (s) { await api.deletePushSubscription(s.endpoint).catch(() => {}); await s.unsubscribe().catch(() => {}); }
-}
-
-// عند فتح التطبيق: إن كان مفعّلًا نحدّث تسجيل الجهاز (قد يتغير عنوان الاشتراك)
-export async function syncPush(uid) {
-  try {
-    if (!pushSupported()) return;
-    if (oneSignalEnabled()) { if (Notification.permission === "granted") await osLink(uid); return; }
-    if (Notification.permission !== "granted") return;
-    const r = await navigator.serviceWorker.getRegistration("/sw.js");
-    const s = r && (await r.pushManager.getSubscription());
-    if (s) await api.savePushSubscription(uid, s.toJSON());
-  } catch { /* صامت */ }
-}
-
-// عند تسجيل الخروج: لا يستقبل الجهاز إشعارات حساب لم يعد مسجّلًا عليه
-export async function releasePush() {
-  try { if (oneSignalEnabled()) { await osRelease(); return; } if (pushSupported()) await disablePush(); } catch { /* صامت */ }
+export function usePush() {
+  const [, tick] = useState(0);
+  useEffect(() => { const f = () => tick((n) => n + 1); listeners.add(f); return () => listeners.delete(f); }, []);
+  const OS = typeof window !== "undefined" ? window.OneSignal : null;
+  const ready = Boolean(OS?.User?.PushSubscription);
+  const perm = supported() ? Notification.permission : "unsupported"; // default | granted | denied | unsupported
+  const on = ready && perm === "granted" && Boolean(OS.User.PushSubscription.optedIn);
+  const enable = useCallback(async () => {
+    if (!supported()) throw new Error("متصفحك لا يدعم الإشعارات. جرّب Chrome على الأندرويد، أو أضف التطبيق للشاشة الرئيسية على الآيفون.");
+    if (Notification.permission === "denied") throw new Error("الإشعارات محظورة من إعدادات المتصفح لهذا الموقع. فعّلها من إعدادات الموقع ثم أعد المحاولة.");
+    boot();
+    await new Promise((res, rej) => {
+      const t = setTimeout(() => rej(new Error("تعذّر تحميل خدمة الإشعارات. تحقق من الإنترنت وحاول مجددًا.")), 8000);
+      withSdk(async (OS2) => {
+        try { await OS2.Notifications.requestPermission(); await OS2.User.PushSubscription.optIn(); link(OS2); clearTimeout(t); notify(); res(); }
+        catch (e) { clearTimeout(t); rej(e); }
+      });
+    });
+  }, []);
+  return { supported: supported() && Boolean(ONESIGNAL_APP_ID), perm, on, enable };
 }

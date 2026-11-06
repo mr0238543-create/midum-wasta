@@ -1,3 +1,4 @@
+import { usePush } from "./push";
 import { useState } from "react";
 import Icon from "./icons";
 import { useApp } from "./app";
@@ -55,6 +56,10 @@ function EditProfile({ onClose }) {
 export default function Account() {
   const { session, uid, profile, villages, favIds, isAdmin, logout, confirm, toast } = useApp();
   const area = useArea();
+  const push = usePush();
+  const togglePush = async () => {
+    try { await push.enable(); toast("تم تفعيل إشعارات الهاتف"); } catch (e) { toast(e.message || "تعذّر تفعيل الإشعارات", "bad"); }
+  };
   const [areaOpen, setAreaOpen] = useState(false);
   const [edit, setEdit] = useState(false);
 
@@ -100,6 +105,7 @@ export default function Account() {
             <Item icon="briefcase" label="وظائفي" onClick={() => go("/jobs/mine")} />
             <Item icon="heart" label="المفضلة" badge={toAr(favIds.size)} onClick={() => go("/favorites")} />
             <Item icon="bell" label="الإشعارات" onClick={() => go("/notifications")} />
+            {push.supported && <Item icon="bell" label={push.on ? "إشعارات الهاتف: مفعّلة ✓" : "تفعيل إشعارات الهاتف"} onClick={push.on ? () => toast("إشعارات الهاتف مفعّلة على هذا الجهاز") : togglePush} />}
             {isAdmin && <Item icon="shield" label="لوحة المشرف" onClick={() => go("/admin")} />}
           </div>
         )}

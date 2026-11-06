@@ -1,5 +1,5 @@
 // تنظيف كاش النسخ القديمة عند أول فتح بعد كل إصدار. غيّر BUILD عند أي إصدار تريد فيه إجبار التحديث.
-const BUILD = "2026-11-06-a";
+const BUILD = "2026-11-06-b";
 (async () => {
   try {
     if (localStorage.getItem("mw_build") === BUILD) return;
@@ -8,7 +8,11 @@ const BUILD = "2026-11-06-a";
       for (const k of await caches.keys()) { await caches.delete(k); touched = true; }
     }
     if ("serviceWorker" in navigator) {
-      for (const r of await navigator.serviceWorker.getRegistrations()) { await r.unregister(); touched = true; }
+      for (const r of await navigator.serviceWorker.getRegistrations()) {
+        const url = (r.active || r.waiting || r.installing)?.scriptURL || "";
+        if (/OneSignal/i.test(url)) continue; // عامل الإشعارات الحالي: لا نلمسه
+        await r.unregister(); touched = true;
+      }
     }
     localStorage.setItem("mw_build", BUILD);
     // إعادة تحميل واحدة فقط (حارس sessionStorage يمنع التكرار) إن وُجد شيء قديم

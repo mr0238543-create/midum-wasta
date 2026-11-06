@@ -4,7 +4,7 @@
   "outputDirectory": "dist",
   "headers": [
     {
-      "source": "/(sw.js|service-worker.js|OneSignalSDKWorker.js|OneSignalSDK.sw.js)",
+      "source": "/(sw.js|service-worker.js|OneSignalSDKWorker.js)",
       "headers": [
         {
           "key": "Cache-Control",

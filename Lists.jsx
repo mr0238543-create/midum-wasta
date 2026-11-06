@@ -39,7 +39,7 @@ export function Favorites() {
 const KIND_ICON = {
   business_approved: "✅", business_rejected: "⛔", business_changes: "✏️", business_suspended: "🚫",
   request_new: "🧾", request_update: "🔔", request_cancelled: "↩️", message: "💬",
-  job_approved: "✅", job_rejected: "⛔", job_suspended: "🚫",
+  new_user: "🎉", order_new: "🛒", order_update: "📦", order_cancelled: "↩️", order_receipt: "🧾", job_approved: "✅", job_rejected: "⛔", job_suspended: "🚫",
 };
 
 export function Notifications() {

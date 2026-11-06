@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import * as api from "./api";
 import { go } from "./router";
 import Icon from "./icons";
+import { initPush, detachPush } from "./push";
 
 const Ctx = createContext(null);
 export const useApp = () => useContext(Ctx);
@@ -71,6 +72,8 @@ export function AppProvider({ children }) {
     } catch { /* تجاهل */ }
   }, [uid]);
 
+  useEffect(() => { initPush(uid); }, [uid]);
+
   const refreshProfile = useCallback(async () => { if (uid) setProfile(await api.getMyProfile(uid)); }, [uid]);
   const refreshUnread = useCallback(async () => { if (uid) setUnread(await api.countUnreadNotifications().catch(() => 0)); }, [uid]);
 
@@ -92,6 +95,7 @@ export function AppProvider({ children }) {
   }, [favIds, requireLogin, toast]);
 
   const logout = useCallback(async () => {
+    await detachPush();
     await api.signOut();
     setSession(null);
     go("/", { replace: true });

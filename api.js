@@ -323,7 +323,12 @@ export const createJob = (fields) => run(supabase.from("job_posts").insert(field
 export const updateJob = (id, patch) => run(supabase.from("job_posts").update(patch).eq("id", id).select().single());
 export const deleteJob = (id) => run(supabase.from("job_posts").delete().eq("id", id));
 
+// ───────────── إشعارات الهاتف (OneSignal) ─────────────
+export const linkOneSignalPlayer = (id) => run(supabase.rpc("link_onesignal_player", { p_player: id }));
+export const unlinkOneSignalPlayer = (id) => run(supabase.rpc("unlink_onesignal_player", { p_player: id }));
+
 // ───────────── المشرف ─────────────
+export const adminUserStats = () => run(supabase.rpc("admin_user_stats"));
 export async function adminCounts() {
   const rows = await run(supabase.rpc("admin_counts"));
   return rows?.[0] || { pending_businesses: 0, pending_jobs: 0, open_reports: 0 };

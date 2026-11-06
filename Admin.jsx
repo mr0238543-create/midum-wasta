@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "./icons";
 import { useApp } from "./app";
+import { usePush } from "./push";
 import { go } from "./router";
 import * as api from "./api";
 import { Async, Empty, Header, StatusBadge, useAsync } from "./ui";
@@ -279,6 +280,41 @@ function VillagesPanel() {
   );
 }
 
+function UsersCard() {
+  const { toast } = useApp();
+  const push = usePush();
+  const st = useAsync(() => api.adminUserStats(), []);
+  const d = st.data;
+  const cell = (n, label) => (
+    <div style={{ flex: "1 1 30%", minWidth: 90, textAlign: "center" }}>
+      <div className="bold" style={{ fontSize: 22 }}>{toAr(Number(n ?? 0))}</div>
+      <div className="muted tiny">{label}</div>
+    </div>
+  );
+  return (
+    <div className="card col" style={{ marginBottom: 12 }}>
+      <div className="h2">المستخدمون</div>
+      {st.error ? <div className="muted small">تعذّر تحميل الإحصاءات.</div> : !d ? <div className="muted small">جارٍ التحميل…</div> : (
+        <>
+          <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
+            {cell(d.total_users, "إجمالي المسجلين")}{cell(d.new_24h, "جدد خلال ٢٤ ساعة")}{cell(d.new_7d, "جدد خلال ٧ أيام")}
+          </div>
+          <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
+            {cell(d.active_24h, "نشطون خلال ٢٤ ساعة")}{cell(d.active_7d, "نشطون خلال ٧ أيام")}{cell(d.active_30d, "نشطون خلال ٣٠ يومًا")}
+          </div>
+          <div className="muted tiny">أجهزة الإشعارات المفعّلة: {toAr(Number(d.push_devices))} (لـ {toAr(Number(d.push_users))} مستخدم). «النشط» = آخر تسجيل دخول.</div>
+        </>
+      )}
+      {push.supported && !push.on && (
+        <div className="banner info">
+          لتصلك إشعارات فورية عند انضمام مستخدم جديد، فعّل الإشعارات على هذا الجهاز.
+          <div className="mt8"><button className="btn primary sm" onClick={async () => { try { await push.enable(); toast("تم تفعيل إشعارات الهاتف"); } catch (e) { toast(e.message, "bad"); } }}>تفعيل إشعارات الهاتف</button></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Admin() {
   const [tab, setTab] = useState("businesses");
   const counts = useAsync(() => api.adminCounts(), []);
@@ -287,6 +323,7 @@ export default function Admin() {
     <div className="screen">
       <Header title="لوحة المشرف" backTo="/account" />
       <div className="pad">
+        <UsersCard />
         <Chips value={tab} onChange={setTab} items={[
           { id: "businesses", label: "الأنشطة", count: Number(c.pending_businesses) },
           { id: "jobs", label: "الوظائف", count: Number(c.pending_jobs) },

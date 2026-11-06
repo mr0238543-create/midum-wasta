@@ -7,7 +7,7 @@ import react from "@vitejs/plugin-react";
 const copyStatic = () => ({
   name: "copy-static",
   closeBundle() {
-    for (const f of ["icon.svg", "manifest.webmanifest"]) {
+    for (const f of ["icon.svg", "manifest.webmanifest", "sw.js", "OneSignalSDKWorker.js", "OneSignalSDK.sw.js", "service-worker.js"]) {
       if (fs.existsSync(f)) fs.copyFileSync(f, path.join("dist", f));
     }
   },

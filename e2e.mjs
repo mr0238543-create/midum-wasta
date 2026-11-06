@@ -159,6 +159,62 @@ await step("12. المستخدم يرى تحديث طلبه، ولا يمكنه 
   await as(B); await go("/requests"); await see("تم القبول");
   await as("201077777777", "كريم"); await go("/requests"); await see("لا توجد طلبات بعد");
 });
+await step("12b. المنتجات والدفع والطلبات: إدارة، شراء، إيصال، قبول، رفض، إلغاء", async () => {
+  // صاحب النشاط يضيف منتجًا ويضبط الدفع
+  await as(A); await go("/my/" + bizId + "/shop"); await see("لا توجد منتجات بعد");
+  await click("إضافة منتج");
+  await lastSheet().getByRole("button", { name: "حفظ" }).click(); await see("اكتب اسم المنتج");
+  await lastSheet().locator("input").first().fill("يانسون ١ كيلو"); await lastSheet().locator("input").nth(1).fill("٧٥٫٥");
+  await lastSheet().getByRole("button", { name: "حفظ" }).click(); await see("يانسون ١ كيلو");
+  await page.getByLabel("فودافون كاش").fill("0101234"); await click("حفظ وسائل الدفع"); await see("غير صحيح");
+  await page.getByLabel("فودافون كاش").fill("01012345678"); await click("حفظ وسائل الدفع"); await see("تم حفظ وسائل الدفع");
+  // مشتري: الدفع المتاح + تحقق + إرسال بمحفظة وإيصال
+  await as(B); await go("/b/" + bizId); await see("المنتجات"); await see("٧٥٫٥ ج.م");
+  await click("شراء");
+  await lastSheet().getByRole("button", { name: "تأكيد الطلب" }).click(); await see("اكتب عنوان التوصيل");
+  await lastSheet().getByRole("button", { name: "زيادة" }).click();
+  await see("الإجمالي: ١٥١ ج.م");
+  await lastSheet().locator("textarea").fill("ميدوم، شارع المدرسة"); 
+  await lastSheet().getByLabel("فودافون كاش").check().catch(async () => { await lastSheet().getByText("فودافون كاش").click(); });
+  await lastSheet().locator('input[type=file]').setInputFiles({ name: "r.png", mimeType: "image/png", buffer: PNG });
+  await lastSheet().getByRole("button", { name: "تأكيد الطلب" }).click();
+  await see("تفاصيل الطلب"); await see("بانتظار الرد"); await see("عرض صورة الإيصال");
+  // صاحب النشاط يرى الطلب الوارد ويقبله ثم يسلّمه
+  await as(A); await go("/orders"); await page.getByRole("tab", { name: /واردة على أنشطتي/ }).click();
+  await page.getByText("يانسون ١ كيلو").first().click(); await see("اتصال بالعميل");
+  await click("قبول الطلب"); await lastSheet().getByRole("button", { name: "قبول الطلب" }).click(); await see("تم القبول");
+  await click("تم التسليم"); await lastSheet().getByRole("button", { name: "تم التسليم" }).click(); await see("تم التسليم");
+  // مشتري: يرى المكتمل، ثم طلب جديد يُرفض بسبب، وآخر يُلغى
+  await as(B); await go("/orders"); await see("يانسون ١ كيلو");
+  const mk = async () => {
+    await go("/b/" + bizId); await click("شراء");
+    await lastSheet().locator("textarea").fill("ميدوم، شارع المدرسة"); await lastSheet().getByText("الدفع عند الاستلام").click();
+    await lastSheet().getByRole("button", { name: "تأكيد الطلب" }).click(); await see("بانتظار الرد");
+  };
+  await mk(); await click("إلغاء الطلب"); await lastSheet().getByRole("button", { name: "إلغاء الطلب" }).click(); await see("ملغي");
+  await mk();
+  await as(A); await go("/orders"); await page.getByRole("tab", { name: /واردة على أنشطتي/ }).click();
+  await page.locator(".card").filter({ hasText: "بانتظار الرد" }).first().click();
+  await click("رفض"); await lastSheet().locator("input").fill("غير متوفر حاليًا"); await lastSheet().getByRole("button", { name: "تأكيد الرفض" }).click();
+  await see("مرفوض"); await see("غير متوفر حاليًا");
+  // مستخدم ثالث لا يرى طلبات غيره
+  await as("201077777777"); await go("/orders"); await see("لم تشترِ شيئًا بعد");
+});
+await step("12c. الدخول بالإيميل: خطأ، إنشاء حساب، دخول، وجوجل غير مفعّل برسالة واضحة", async () => {
+  await mock("signOutNow"); await page.waitForTimeout(300); await go("/login");
+  await page.getByRole("tab", { name: "الإيميل" }).click();
+  await page.getByLabel("الإيميل").fill("abc"); await page.getByLabel("كلمة المرور").fill("123456");
+  await page.getByRole("button", { name: "دخول", exact: true }).click(); await see("اكتب إيميلًا صحيحًا");
+  await page.getByLabel("الإيميل").fill("sara@example.com"); await page.getByRole("button", { name: "دخول", exact: true }).click(); await see("غير صحيحة");
+  await click("ليس لدي حساب"); await page.getByPlaceholder("مثال: أحمد علي").fill("سارة");
+  await page.getByRole("button", { name: "إنشاء الحساب" }).click(); await see("حسابي");
+  await mock("signOutNow"); await page.waitForTimeout(300); await go("/login");
+  await click("المتابعة بحساب جوجل"); await see("غير مفعّلة حاليًا");
+  await page.getByRole("tab", { name: "الإيميل" }).click();
+  await page.getByLabel("الإيميل").fill("sara@example.com"); await page.getByLabel("كلمة المرور").fill("123456");
+  await page.getByRole("button", { name: "دخول", exact: true }).click(); await see("حسابي");
+  await go("/account"); await see("sara@example.com");
+});
 await step("13. المشرف: بلاغ → إيقاف النشاط فيختفي من البحث", async () => {
   await as(ADMIN); await go("/admin"); await click("البلاغات"); await see("محتوى غير مناسب".slice(0, 0) || "معلومات خاطئة");
   await page.getByRole("button", { name: "إيقاف المحتوى" }).click();

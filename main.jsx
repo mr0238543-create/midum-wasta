@@ -1,5 +1,6 @@
 import { Component, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import "./cleanup";
 import "./styles.css";
 import { isConfigured } from "./supabase";
 import { AppProvider, useApp } from "./app";

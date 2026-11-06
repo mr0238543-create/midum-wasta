@@ -10,7 +10,7 @@ const now = () => new Date().toISOString();
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
 const db = {
-  profiles: {}, businesses: [], reviews: [], favorites: [], requests: [], convs: [], messages: [], notifs: [], reports: [], jobs: [],
+  profiles: {}, products: [], payments: {}, orders: [], businesses: [], reviews: [], favorites: [], requests: [], convs: [], messages: [], notifs: [], reports: [], jobs: [],
   categories: [
     ["restaurants", "المطاعم والكافيهات", "🍽️", "business"], ["shops", "المحلات والسوبر ماركت", "🛍️", "business"], ["pharmacies", "الصيدليات", "💊", "business"],
     ["clinics", "الأطباء والعيادات", "🩺", "business"], ["labs", "المعامل والتحاليل", "🧪", "business"], ["transport", "المواصلات", "🚌", "business"],
@@ -26,7 +26,7 @@ let uid = null;
 const listeners = new Set();
 const msgSubs = new Set();
 const notifSubs = new Set();
-const sessionOf = () => (uid ? { user: { id: uid, phone: db.profiles[uid].phone } } : null);
+const sessionOf = () => (uid ? { user: { id: uid, phone: db.profiles[uid].phone, email: db.profiles[uid].email } } : null);
 const emit = () => listeners.forEach((f) => f(sessionOf()));
 const me = () => db.profiles[uid];
 const isAdmin = () => me()?.role === "admin";
@@ -249,3 +249,60 @@ export async function adminSetBanned(id, banned) { adm(); db.profiles[id].is_ban
 export async function adminProfiles(ids) { adm(); return clone(Object.fromEntries(ids.filter(Boolean).map((i) => [i, db.profiles[i]]))); }
 export async function adminSaveCategory(row) { adm(); const i = db.categories.findIndex((c) => c.id === row.id); if (i >= 0) db.categories[i] = { ...db.categories[i], ...row }; else db.categories.push(row); return clone(row); }
 export async function adminSaveVillage(row) { adm(); if (row.id) { const i = db.villages.findIndex((v) => v.id === row.id); db.villages[i] = { ...db.villages[i], ...row }; } else db.villages.push({ ...row, id: db.villages.length + 1 }); return clone(row); }
+
+
+// ── الدخول بالإيميل/جوجل ──
+export async function signInWithGoogle(next) { window.__googleNext = next || null; throw new ApiError("هذه الطريقة غير مفعّلة حاليًا. استخدم طريقة دخول أخرى."); }
+export async function signInWithEmail(email, password) {
+  const p = Object.values(db.profiles).find((x) => x.email === email.trim());
+  if (!p || p.password !== password) throw new ApiError("الإيميل أو كلمة المرور غير صحيحة.");
+  uid = p.id; emit(); return sessionOf();
+}
+export async function signUpWithEmail(email, password, fullName) {
+  if (Object.values(db.profiles).some((x) => x.email === email.trim())) throw new ApiError("هذا الإيميل مسجّل بالفعل. سجّل الدخول، أو اطلب رابط دخول.");
+  const p = { id: uuid(), phone: null, email: email.trim(), password, full_name: fullName || null, role: "user", village_id: null, is_banned: false, created_at: now() };
+  db.profiles[p.id] = p; uid = p.id; emit(); return { session: sessionOf() };
+}
+export async function sendMagicLink() {}
+
+// ── المنتجات والدفع والطلبات ──
+const ownerOf = (bid) => db.businesses.find((b) => b.id === bid)?.owner_id;
+export const listProducts = async (bid) => clone(db.products.filter((p) => p.business_id === bid && db.businesses.find((b) => b.id === bid)?.status === "approved").sort((a, b) => a.sort_order - b.sort_order));
+export const listMyProducts = async (bid) => clone(db.products.filter((p) => p.business_id === bid && ownerOf(bid) === uid));
+export async function saveProduct({ id, business_id, name, price, photo }) {
+  login(); need(name.trim().length >= 2 && price >= 0, "بيانات المنتج غير صحيحة.");
+  if (id) { const p = db.products.find((x) => x.id === id && ownerOf(x.business_id) === uid); need(p, "ليست لديك صلاحية لهذا الإجراء.", "42501"); Object.assign(p, { name: name.trim(), price, photo: photo || null }); return clone(p); }
+  need(ownerOf(business_id) === uid, "ليست لديك صلاحية لهذا الإجراء.", "42501");
+  const p = { id: uuid(), business_id, name: name.trim(), price, photo: photo || null, sort_order: 0, created_at: now() }; db.products.push(p); return clone(p);
+}
+export async function deleteProduct(id) { db.products = db.products.filter((p) => !(p.id === id && ownerOf(p.business_id) === uid)); }
+export async function getPaymentMethods(bid) { const b = db.businesses.find((x) => x.id === bid && x.status === "approved"); if (!b) return null; const r = db.payments[bid]; return r ? clone({ business_id: bid, ...r }) : null; }
+export const getMyPayments = async (bid) => (ownerOf(bid) === uid && db.payments[bid] ? clone({ business_id: bid, ...db.payments[bid] }) : null);
+export async function saveMyPayments(bid, f) { need(ownerOf(bid) === uid, "ليست لديك صلاحية لهذا الإجراء.", "42501"); const { business_id, updated_at, ...rest } = f; db.payments[bid] = rest; return clone(rest); }
+export async function createOrder(f) {
+  login();
+  const p = db.products.find((x) => x.id === f.product_id && x.business_id === f.business_id); need(p, "هذا المنتج لم يعد متاحًا. حدّث الصفحة وحاول مجددًا.");
+  const bp = db.payments[f.business_id] || { cod: true };
+  const okPay = f.payment_method === "cod" ? bp.cod !== false : Boolean(bp[f.payment_method]);
+  need(okPay, "طريقة الدفع هذه غير متاحة لدى هذا النشاط. اختر طريقة أخرى.");
+  need(ownerOf(f.business_id) !== uid, "لا يمكنك الشراء من هذا النشاط.");
+  const b = db.businesses.find((x) => x.id === f.business_id);
+  const o = { ...f, receipt_path: f.payment_method === "cod" ? null : f.receipt_path || null, id: uuid(), user_id: uid, business_name: b.name, product_name: p.name, product_photo: p.photo, unit_price: p.price, total: p.price * f.quantity, status: "new", reject_reason: null, created_at: now(), updated_at: now() };
+  db.orders.push(o); notify(b.owner_id, "order_new", `طلب شراء جديد على «${b.name}»`, `${p.name} × ${f.quantity}`, `/orders/${o.id}`); return clone(o);
+}
+export const listMyOrders = async (id) => clone(db.orders.filter((o) => o.user_id === id).sort((a, b) => b.created_at.localeCompare(a.created_at)));
+export async function listIncomingOrders(ids) { return clone(db.orders.filter((o) => ids.includes(o.business_id) && ownerOf(o.business_id) === uid)); }
+export async function getOrder(id) { const o = db.orders.find((x) => x.id === id); return o && (o.user_id === uid || ownerOf(o.business_id) === uid) ? clone(o) : null; }
+export async function updateOrderStatus(id, status, reason) {
+  const o = db.orders.find((x) => x.id === id); need(o, "ليست لديك صلاحية لهذا الإجراء.", "42501");
+  const buyer = o.user_id === uid, owner = ownerOf(o.business_id) === uid;
+  const ok = buyer ? o.status === "new" && status === "cancelled"
+    : owner && ((o.status === "new" && ["accepted", "rejected"].includes(status)) || (o.status === "accepted" && ["shipped", "delivered"].includes(status)) || (o.status === "shipped" && status === "delivered"));
+  need(ok, "لا يمكن تنفيذ هذا الإجراء على حالة الطلب الحالية. حدّث الصفحة.");
+  o.status = status; if (status === "rejected") o.reject_reason = reason;
+  if (!buyer) notify(o.user_id, "order_update", "تحديث على طلبك", o.product_name, `/orders/${o.id}`);
+  return clone(o);
+}
+export async function attachReceipt(id, path) { const o = db.orders.find((x) => x.id === id && x.user_id === uid); need(o && o.payment_method !== "cod" && ["new", "accepted"].includes(o.status), "لا يمكن تنفيذ هذا الإجراء على حالة الطلب الحالية. حدّث الصفحة."); o.receipt_path = path; return clone(o); }
+export async function uploadReceipt(id) { return `${id}/${uuid()}.jpg`; }
+export async function receiptUrl() { return "data:image/gif;base64,R0lGODlhAQABAIAAAP8AAP///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="; }

@@ -1,42 +1,13 @@
-// Service Worker: يستقبل الإشعارات الفورية ويعرضها حتى لو التطبيق مغلق.
+// عامل خدمة «تنظيف ذاتي»: يحلّ محل أي نسخة قديمة مخزّنة على هواتف المستخدمين.
+// عند التفعيل: يمسح كل الكاش القديم، ثم يعيد تحميل الصفحات المفتوحة لتجلب أحدث نسخة، ثم يلغي نفسه.
+// لا يعترض أي طلب شبكة (لا fetch handler)، فلا يمكنه تقديم محتوى قديم أبدًا.
 self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
-
-self.addEventListener("push", (event) => {
-  let d = {};
-  try { d = event.data ? event.data.json() : {}; } catch { d = { title: event.data ? event.data.text() : "" }; }
-  const title = d.title || "ميدوم والواسطي";
+self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    // لو التطبيق مفتوح وظاهر أمام المستخدم، يكفيه التنبيه داخل التطبيق
-    const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    if (all.some((c) => c.visibilityState === "visible")) return;
-    await self.registration.showNotification(title, {
-    body: d.body || "",
-    icon: "/icon.svg",
-    badge: "/icon.svg",
-    dir: "rtl",
-    lang: "ar",
-    tag: d.tag || undefined,
-    renotify: !!d.tag,
-    vibrate: [200, 100, 200],
-    silent: false,
-    data: { url: d.url || "/#/notifications" },
-    });
-  })());
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const url = new URL((event.notification.data && event.notification.data.url) || "/#/notifications", self.location.origin).href;
-  event.waitUntil((async () => {
-    const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    for (const c of all) {
-      if (new URL(c.url).origin === self.location.origin) {
-        await c.focus();
-        if ("navigate" in c) { try { await c.navigate(url); } catch { /* يكفي التركيز */ } }
-        return;
-      }
-    }
-    await self.clients.openWindow(url);
+    try { for (const k of await caches.keys()) await caches.delete(k); } catch (e) { /* تجاهل */ }
+    await self.clients.claim();
+    const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    await self.registration.unregister();
+    for (const c of wins) { try { c.navigate(c.url); } catch (e) { /* تجاهل */ } }
   })());
 });

@@ -193,7 +193,7 @@ export function RequireAuth({ children, next }) {
   const { session, requireLogin } = useApp();
   useEffect(() => { if (session === null) requireLogin(next); }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
   if (session === undefined) return <Loading />;
-  if (!session) return <Empty icon="🔒" title="سجّل الدخول للمتابعة" text="نحتاج رقم هاتفك لحماية حسابك وبياناتك." />;
+  if (!session) return <Empty icon="🔒" title="سجّل الدخول للمتابعة" text="نحتاج تسجيل دخولك لحماية حسابك وبياناتك." />;
   return children;
 }
 

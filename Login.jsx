@@ -56,6 +56,38 @@ export default function Login() {
   const [name, setName] = useState("");
   const [villageId, setVillageId] = useState("");
   const ts = useTurnstile();
+  const [method, setMethod] = useState("phone"); // phone | email
+  const [mode, setMode] = useState("in"); // in | up (للإيميل)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [info, setInfo] = useState("");
+
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  const google = async () => {
+    setError(""); setInfo(""); setBusy(true);
+    try { await api.signInWithGoogle(next); } // يحوّل المتصفح إلى جوجل
+    catch (err) { setError(err.message); setBusy(false); }
+  };
+  const emailSubmit = async (e) => {
+    e.preventDefault(); setError(""); setInfo("");
+    if (!validEmail) { setError("اكتب إيميلًا صحيحًا."); return; }
+    if (password.length < 6) { setError("كلمة المرور ٦ أحرف على الأقل."); return; }
+    setBusy(true);
+    try {
+      if (mode === "in") await api.signInWithEmail(email, password);
+      else {
+        const r = await api.signUpWithEmail(email, password, name);
+        if (r.needsConfirm) setInfo("أرسلنا رابط تفعيل إلى بريدك. افتحه ثم ارجع وسجّل الدخول.");
+      }
+    } catch (err) { setError(err.message); } finally { setBusy(false); }
+  };
+  const magic = async () => {
+    setError(""); setInfo("");
+    if (!validEmail) { setError("اكتب إيميلك أولًا."); return; }
+    setBusy(true);
+    try { await api.sendMagicLink(email); setInfo("أرسلنا رابط دخول إلى بريدك. افتحه من نفس الجهاز."); }
+    catch (err) { setError(err.message); } finally { setBusy(false); }
+  };
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -153,7 +185,32 @@ export default function Login() {
     <div className="screen">
       {brand}
       <div className="pad" style={{ marginTop: -24 }}>
-        {step === "phone" ? (
+        <div className="card col" style={{ marginBottom: 12 }}>
+          <button type="button" className="btn soft block" disabled={busy} onClick={google}>
+            <span aria-hidden="true" style={{ fontWeight: 800, color: "#4285F4" }}>G</span> المتابعة بحساب جوجل
+          </button>
+          <div className="tabs2" role="tablist" aria-label="طريقة الدخول">
+            <button type="button" role="tab" aria-selected={method === "phone"} className={method === "phone" ? "on" : ""} onClick={() => { setMethod("phone"); setError(""); setInfo(""); }}>رقم الموبايل</button>
+            <button type="button" role="tab" aria-selected={method === "email"} className={method === "email" ? "on" : ""} onClick={() => { setMethod("email"); setStep("phone"); setError(""); setInfo(""); }}>الإيميل</button>
+          </div>
+        </div>
+        {method === "email" ? (
+          <form className="card col" onSubmit={emailSubmit} noValidate>
+            <div className="h2">{mode === "in" ? "الدخول بالإيميل" : "إنشاء حساب بالإيميل"}</div>
+            {mode === "up" && (
+              <Field label="الاسم"><input className="input" value={name} maxLength={80} autoComplete="name" onChange={(e) => setName(e.target.value)} placeholder="مثال: أحمد علي" /></Field>
+            )}
+            <Field label="الإيميل"><input className="input ltr" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" aria-label="الإيميل" /></Field>
+            <Field label="كلمة المرور"><input className="input ltr" type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" aria-label="كلمة المرور" /></Field>
+            {error && <div className="banner bad" role="alert">{error}</div>}
+            {info && <div className="banner ok" role="status">{info}</div>}
+            <button className="btn primary block" disabled={busy}>{busy ? "جارٍ التنفيذ…" : mode === "in" ? "دخول" : "إنشاء الحساب"}</button>
+            <div className="row between">
+              <button type="button" className="small bold" style={{ color: "var(--deep)" }} onClick={() => { setMode(mode === "in" ? "up" : "in"); setError(""); setInfo(""); }}>{mode === "in" ? "ليس لدي حساب" : "لدي حساب بالفعل"}</button>
+              <button type="button" className="small bold" style={{ color: "var(--deep)" }} disabled={busy} onClick={magic}>نسيت كلمة المرور؟ أرسل رابط دخول</button>
+            </div>
+          </form>
+        ) : step === "phone" ? (
           <form className="card col" onSubmit={send}>
             <div className="h2">رقم الموبايل</div>
             <Field label="رقمك" hint="سنرسل لك رمز تحقق من ٦ أرقام برسالة نصية. لا توجد كلمة مرور: ندخلك دائمًا بالرمز.">

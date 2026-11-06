@@ -5,6 +5,7 @@ import { back, go } from "./router";
 import * as api from "./api";
 import { Empty, ErrorBox, Field, Loading, Sheet, Stars, StarPicker, StatusBadge, useAsync } from "./ui";
 import { ReportSheet } from "./shared";
+import { ProductsSection } from "./Products";
 import { BUSINESS_STATUS, directionsUrl, fmtRating, osmEmbedUrl, shareUrl, timeAgo, toAr } from "./util";
 
 function Row({ icon, label, children }) {
@@ -242,6 +243,8 @@ export default function Business({ id }) {
             <iframe className="map mt12" title="موقع النشاط على الخريطة" loading="lazy" src={osmEmbedUrl(b.lat, b.lng)} />
           </>
         )}
+
+        {isPublic && !demo && <ProductsSection business={b} canBuy={interactive} requireLogin={requireLogin} />}
 
         {interactive && (
           <button className="btn soft block mt24" onClick={() => { if (requireLogin(`/b/${b.id}`)) setSheet("request"); }}>

@@ -58,6 +58,24 @@ export const REQUEST_STATUS = {
   declined: { label: "تعذّر القبول", tone: "bad" },
   cancelled: { label: "ملغي", tone: "mute" },
 };
+export const ORDER_STATUS = {
+  new: { label: "بانتظار الرد", tone: "warn" },
+  accepted: { label: "تم القبول", tone: "ok" },
+  shipped: { label: "في الطريق", tone: "ok" },
+  delivered: { label: "تم التسليم", tone: "ok" },
+  rejected: { label: "مرفوض", tone: "bad" },
+  cancelled: { label: "ملغي", tone: "mute" },
+};
+export const PAYMENT_LABELS = {
+  cod: "الدفع عند الاستلام",
+  vodafone_cash: "فودافون كاش",
+  etisalat_cash: "اتصالات كاش",
+  orange_cash: "أورنج كاش",
+  instapay: "إنستاباي",
+};
+export const WALLET_METHODS = ["vodafone_cash", "etisalat_cash", "orange_cash", "instapay"];
+export const fmtMoney = (n) => `${toAr(Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })).replace(/\./g, "٫").replace(/,/g, "٬")} ج.م`;
+
 export const JOB_TYPES = { full: "دوام كامل", part: "دوام جزئي", temp: "مؤقت", freelance: "عمل حر" };
 export const REPORT_REASONS = {
   wrong_info: "معلومات خاطئة",

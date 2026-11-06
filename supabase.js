@@ -7,7 +7,7 @@ export { SUPABASE_URL, CONTACT_EMAIL, isConfigured };
 // الأمان الفعلي من سياسات قاعدة البيانات (RLS).
 export const supabase = isConfigured
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
       realtime: { params: { eventsPerSecond: 5 } },
     })
   : null;

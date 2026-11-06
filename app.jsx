@@ -62,6 +62,15 @@ export function AppProvider({ children }) {
     return () => { alive = false; off(); };
   }, [uid, session === undefined, toast]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // بعد العودة من جوجل: نكمل إلى الوجهة المحفوظة قبل التحويل
+  useEffect(() => {
+    if (!uid) return;
+    try {
+      const n = sessionStorage.getItem("mw_next");
+      if (n) { sessionStorage.removeItem("mw_next"); if (n.startsWith("/") && !n.startsWith("//")) go(n, { replace: true }); }
+    } catch { /* تجاهل */ }
+  }, [uid]);
+
   const refreshProfile = useCallback(async () => { if (uid) setProfile(await api.getMyProfile(uid)); }, [uid]);
   const refreshUnread = useCallback(async () => { if (uid) setUnread(await api.countUnreadNotifications().catch(() => 0)); }, [uid]);
 

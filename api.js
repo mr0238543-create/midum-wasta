@@ -13,7 +13,6 @@ const DB_MESSAGES = [
   ["rate_limit_business", "وصلت للحد اليومي لإضافة الأنشطة (٣ في اليوم). حاول غدًا."],
   ["limit_business_total", "وصلت للحد الأقصى من الأنشطة المسموح بها لحساب واحد."],
   ["rate_limit_review", "أرسلت تقييمات كثيرة خلال وقت قصير. حاول بعد قليل."],
-  ["rate_limit_request", "وصلت للحد اليومي لإرسال الطلبات."],
   ["rate_limit_message", "أرسلت رسائل كثيرة بسرعة. انتظر قليلًا ثم أعد المحاولة."],
   ["rate_limit_report", "وصلت للحد اليومي للبلاغات."],
   ["rate_limit_job", "وصلت للحد اليومي لنشر الوظائف (٣ في اليوم)."],
@@ -23,6 +22,11 @@ const DB_MESSAGES = [
   ["not_participant", "لا تملك صلاحية الوصول لهذه المحادثة."],
   ["cannot_ban_self", "لا يمكنك حظر نفسك."],
   ["last_admin", "لا يمكن حذف آخر مشرف في النظام. عيّن مشرفًا آخر أولًا."],
+  ["cannot_order", "لا يمكنك الشراء من هذا النشاط."],
+  ["product_not_found", "هذا المنتج لم يعد متاحًا. حدّث الصفحة وحاول مجددًا."],
+  ["payment_not_accepted", "طريقة الدفع هذه غير متاحة لدى هذا النشاط. اختر طريقة أخرى."],
+  ["invalid_receipt", "تعذّر ربط صورة الإيصال بالطلب. أعد رفعها."],
+  ["invalid_transition", "لا يمكن تنفيذ هذا الإجراء على حالة الطلب الحالية. حدّث الصفحة."],
 ];
 
 export function humanize(err) {
@@ -43,8 +47,14 @@ export function humanize(err) {
 function humanizeAuth(err) {
   const msg = String(err?.message || "");
   const status = err?.status;
-  if (/invalid|expired|token/i.test(msg)) return "رمز التحقق غير صحيح أو انتهت صلاحيته.";
+  if (/invalid login credentials/i.test(msg)) return "الإيميل أو كلمة المرور غير صحيحة.";
+  if (/email not confirmed/i.test(msg)) return "فعّل بريدك أولًا من الرسالة التي وصلتك، ثم سجّل الدخول.";
+  if (/already registered|already been registered/i.test(msg)) return "هذا الإيميل مسجّل بالفعل. سجّل الدخول بدل إنشاء حساب.";
+  if (/password/i.test(msg) && /(least|short|weak|characters)/i.test(msg)) return "كلمة المرور ضعيفة. استخدم ٦ أحرف على الأقل.";
+  if (/valid email|email address.*invalid|invalid.*email/i.test(msg)) return "اكتب إيميلًا صحيحًا.";
+  if (/provider.*(not enabled|disabled)|unsupported provider/i.test(msg)) return "هذه الطريقة غير مفعّلة حاليًا. استخدم طريقة دخول أخرى.";
   if (status === 429 || /rate limit|too many|security purposes/i.test(msg)) return "محاولات كثيرة. انتظر دقيقة ثم أعد المحاولة.";
+  if (/invalid|expired|token/i.test(msg)) return "رمز التحقق غير صحيح أو انتهت صلاحيته.";
   if (/phone|sms|provider|twilio/i.test(msg)) return "تعذّر إرسال رسالة التحقق إلى هذا الرقم. تأكد من الرقم وحاول مجددًا.";
   if (/failed to fetch|network/i.test(msg)) return "تعذّر الاتصال بالإنترنت. تحقق من الشبكة وأعد المحاولة.";
   return "تعذّر تسجيل الدخول. أعد المحاولة.";
@@ -68,6 +78,35 @@ export async function verifyOtp(e164, token) {
   if (error) throw new ApiError(humanizeAuth(error), error.status);
   return data.session;
 }
+const siteUrl = () => `${location.origin}${location.pathname}`;
+// الدخول بجوجل: يحوّل المتصفح إلى جوجل ثم يعود للموقع بجلسة جاهزة. next يُحفظ مؤقتًا لنعيد المستخدم لوجهته.
+export async function signInWithGoogle(next) {
+  try { if (next) sessionStorage.setItem("mw_next", next); } catch { /* تجاهل */ }
+  const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: siteUrl() } });
+  if (error) throw new ApiError(humanizeAuth(error), error.status);
+}
+export async function signInWithEmail(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  if (error) throw new ApiError(humanizeAuth(error), error.status);
+  return data.session;
+}
+// يرجع { session } عند الدخول فورًا، أو { needsConfirm: true } إن كان المشروع يشترط تفعيل البريد
+export async function signUpWithEmail(email, password, fullName) {
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim(), password,
+    options: { data: { full_name: fullName?.trim() || undefined }, emailRedirectTo: siteUrl() },
+  });
+  if (error) throw new ApiError(humanizeAuth(error), error.status);
+  // بريد مسجّل سابقًا: Supabase يرجع مستخدمًا بلا هويات بدل خطأ (لمنع كشف الحسابات)
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
+    throw new ApiError("هذا الإيميل مسجّل بالفعل. سجّل الدخول، أو اطلب رابط دخول.", 422);
+  return data.session ? { session: data.session } : { needsConfirm: true };
+}
+// رابط دخول بالإيميل (يصلح لمن نسي كلمة المرور أو سجّل سابقًا بالإيميل)
+export async function sendMagicLink(email) {
+  const { error } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true, emailRedirectTo: siteUrl() } });
+  if (error) throw new ApiError(humanizeAuth(error), error.status);
+}
 export async function getSession() {
   const { data } = await supabase.auth.getSession();
   return data.session;
@@ -87,6 +126,8 @@ export async function deleteMyAccount(uid) {
   try { // حذف صور المستخدم من التخزين أولًا (الجداول تُحذف تلقائيًا بالتسلسل)
     const { data } = await supabase.storage.from("business-photos").list(uid, { limit: 100 });
     if (data?.length) await supabase.storage.from("business-photos").remove(data.map((f) => `${uid}/${f.name}`));
+    const rec = await supabase.storage.from("receipts").list(uid, { limit: 100 });
+    if (rec.data?.length) await supabase.storage.from("receipts").remove(rec.data.map((f) => `${uid}/${f.name}`));
   } catch { /* لا نمنع الحذف بسبب الصور */ }
   await run(supabase.rpc("delete_my_account"));
   await supabase.auth.signOut().catch(() => {});
@@ -172,6 +213,51 @@ export async function listFavorites() {
   const ids = await listFavoriteIds();
   if (!ids.length) return [];
   return run(supabase.from("business_public").select("*").in("id", ids));
+}
+
+// ───────────── المنتجات ووسائل الدفع ─────────────
+export const listProducts = (businessId) =>
+  run(supabase.from("products_public").select("*").eq("business_id", businessId).order("sort_order").order("created_at"));
+export const listMyProducts = (businessId) =>
+  run(supabase.from("products").select("*").eq("business_id", businessId).order("sort_order").order("created_at"));
+export function saveProduct({ id, business_id, name, price, photo }) {
+  const body = { name: name.trim(), price, photo: photo || null };
+  return id
+    ? run(supabase.from("products").update(body).eq("id", id).select().single())
+    : run(supabase.from("products").insert({ business_id, ...body }).select().single());
+}
+export const deleteProduct = (id) => run(supabase.from("products").delete().eq("id", id));
+// وسائل الدفع المتاحة للمشتري (نشاط معتمد فقط). غياب السجل يعني: الدفع عند الاستلام فقط.
+export const getPaymentMethods = (businessId) =>
+  run(supabase.from("payment_methods_public").select("*").eq("business_id", businessId).maybeSingle());
+export const getMyPayments = (businessId) =>
+  run(supabase.from("business_payments").select("*").eq("business_id", businessId).maybeSingle());
+export const saveMyPayments = (businessId, fields) =>
+  run(supabase.from("business_payments").upsert({ business_id: businessId, ...fields, updated_at: new Date().toISOString() }, { onConflict: "business_id" }).select().single());
+
+// ───────────── طلبات الشراء ─────────────
+export const createOrder = (fields) => run(supabase.from("orders").insert(fields).select().single());
+export const listMyOrders = (uid) =>
+  run(supabase.from("orders").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(100));
+export async function listIncomingOrders(businessIds) {
+  if (!businessIds.length) return [];
+  return run(supabase.from("orders").select("*").in("business_id", businessIds).order("created_at", { ascending: false }).limit(100));
+}
+export const getOrder = (id) => run(supabase.from("orders").select("*").eq("id", id).maybeSingle());
+export const updateOrderStatus = (id, status, rejectReason) =>
+  run(supabase.from("orders").update(status === "rejected" ? { status, reject_reason: rejectReason } : { status }).eq("id", id).select().single());
+export const attachReceipt = (id, path) => run(supabase.from("orders").update({ receipt_path: path }).eq("id", id).select().single());
+// الإيصالات في حاوية خاصة: يرفعها صاحب الطلب، ويراها هو وصاحب النشاط فقط عبر رابط مؤقت
+export async function uploadReceipt(uid, blob) {
+  const path = `${uid}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from("receipts").upload(path, blob, { contentType: "image/jpeg", upsert: false });
+  if (error) throw new ApiError(humanize(error), error.statusCode);
+  return path;
+}
+export async function receiptUrl(path) {
+  const { data, error } = await supabase.storage.from("receipts").createSignedUrl(path, 300);
+  if (error) throw new ApiError("تعذّر فتح الإيصال. حاول مجددًا.", error.statusCode);
+  return data.signedUrl;
 }
 
 // ───────────── الطلبات ─────────────

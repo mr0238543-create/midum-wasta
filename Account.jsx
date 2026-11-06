@@ -78,7 +78,7 @@ export default function Account() {
           {session ? (
             <>
               <h1 style={{ fontSize: 20, marginTop: 10 }}>{profile?.full_name || "مستخدم"}</h1>
-              <div style={{ fontSize: 13, opacity: 0.92 }}><span className="ltr" style={{ display: "inline-block" }}>{profile?.phone ? toAr("+" + profile.phone.replace(/^\+/, "")) : ""}</span> · {ROLE[profile?.role] || ""}</div>
+              <div style={{ fontSize: 13, opacity: 0.92 }}><span className="ltr" style={{ display: "inline-block" }}>{profile?.phone ? toAr("+" + profile.phone.replace(/^\+/, "")) : (session?.user?.email || "")}</span> · {ROLE[profile?.role] || ""}</div>
             </>
           ) : <h1 style={{ fontSize: 20, marginTop: 10 }}>مرحبًا بك</h1>}
         </div>
@@ -89,13 +89,14 @@ export default function Account() {
           <div className="card col">
             <div className="bold">سجّل الدخول لتستفيد من كل المزايا</div>
             <div className="muted small" style={{ lineHeight: 1.8 }}>التقييم، المفضلة، المحادثات، الطلبات، وإضافة نشاطك.</div>
-            <button className="btn primary block" onClick={() => go("/login?next=/account")}>تسجيل الدخول برقم الهاتف</button>
+            <button className="btn primary block" onClick={() => go("/login?next=/account")}>تسجيل الدخول</button>
           </div>
         ) : (
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
             <Item icon="edit" label="تعديل بياناتي" onClick={() => setEdit(true)} />
             <Item icon="store" label="أنشطتي" onClick={() => go("/my")} />
             <Item icon="plus" label="أضف نشاطك" onClick={() => go("/add")} />
+            <Item icon="clipboard" label="طلبات الشراء" onClick={() => go("/orders")} />
             <Item icon="briefcase" label="وظائفي" onClick={() => go("/jobs/mine")} />
             <Item icon="heart" label="المفضلة" badge={toAr(favIds.size)} onClick={() => go("/favorites")} />
             <Item icon="bell" label="الإشعارات" onClick={() => go("/notifications")} />

@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 
 // موجّه بسيط قائم على hash: يعمل على أي استضافة ثابتة، وتصلح الروابط للمشاركة (#/b/<id>)
 export function parseHash(h = window.location.hash) {
-  const raw = h.replace(/^#/, "") || "/";
+  let raw = h.replace(/^#/, "") || "/";
+  // عودة جوجل/رابط الإيميل تضع مفاتيح الجلسة في الهاش (#access_token=…)؛ ليست مسارًا فنعرض الرئيسية
+  if (!raw.startsWith("/")) raw = "/";
   const [path, qs = ""] = raw.split("?");
   return { path: path || "/", query: Object.fromEntries(new URLSearchParams(qs)) };
 }

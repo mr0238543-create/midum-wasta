@@ -273,6 +273,7 @@ export function MyBusinesses() {
                   <div className="row wrap" style={{ gap: 8 }}>
                     <button className="btn soft sm" onClick={() => go(`/b/${b.id}`)}>عرض</button>
                     <button className="btn soft sm" onClick={() => go(`/my/${b.id}`)}><Icon name="edit" size={14} /> {["rejected", "changes_requested"].includes(b.status) ? "تعديل وإعادة إرسال" : "تعديل"}</button>
+                    <button className="btn soft sm" onClick={() => go(`/my/${b.id}/shop`)}>المنتجات والدفع</button>
                     <button className="btn danger sm" onClick={() => remove(b)}><Icon name="trash" size={14} /> حذف</button>
                   </div>
                 </div>

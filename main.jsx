@@ -22,6 +22,9 @@ import Admin from "./Admin";
 import { Privacy, Terms } from "./Legal";
 
 // auth: يتطلب تسجيل الدخول — admin: للمشرفين — tab: التبويب المفعّل — bare: بلا شريط سفلي
+import ShopManager from "./Products";
+import Orders, { OrderDetail } from "./Orders";
+
 const ROUTES = [
   ["/", { C: Home, tab: "/" }],
   ["/categories", { C: Categories, tab: "/categories" }],
@@ -31,6 +34,9 @@ const ROUTES = [
   ["/add", { C: BusinessForm, auth: true, tab: "/account" }],
   ["/my", { C: MyBusinesses, auth: true, tab: "/account" }],
   ["/my/:id", { C: BusinessForm, auth: true, tab: "/account" }],
+  ["/my/:id/shop", { C: ShopManager, auth: true, tab: "/account" }],
+  ["/orders", { C: Orders, auth: true, tab: "/account" }],
+  ["/orders/:id", { C: OrderDetail, auth: true, tab: "/account" }],
   ["/favorites", { C: Favorites, auth: true, tab: "/account" }],
   ["/requests", { C: Requests, auth: true, tab: "/requests" }],
   ["/requests/:id", { C: RequestDetail, auth: true, tab: "/requests" }],

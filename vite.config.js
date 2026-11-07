@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 const ROOT = process.cwd();
-const STATIC = ["OneSignalSDKWorker.js", "apple-touch-icon.png", "favicon-32.png", "favicon.ico", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "manifest.json", "service-worker.js", "sw.js"];
+const STATIC = ["OneSignalSDKWorker.js", "apple-touch-icon.png", "favicon-32.png", "favicon.ico", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "manifest.json", "manifest.webmanifest", "service-worker.js", "sw.js"];
 
 // الملفات كلها في جذر المشروع (بدون مجلدات)، فننسخ الأيقونات وملف التثبيت وعمّال الخدمة إلى dist عند البناء.
 const copyStatic = () => ({
@@ -32,7 +32,17 @@ const flatResolve = () => ({
   },
 });
 
+// يبقي رابط ملف التثبيت ثابتًا (/manifest.webmanifest) بعد البناء حتى لا يضيع تحديث الاسم والأيقونة عند من ثبّتوا التطبيق،
+// فـ Vite قد يعيد تسميته بـ hash.
+const stableManifest = () => ({
+  name: "stable-manifest",
+  transformIndexHtml: {
+    order: "post",
+    handler: (html) => html.replace(/<link\b[^>]*\brel=["']manifest["'][^>]*>/i, '<link rel="manifest" href="/manifest.webmanifest" />'),
+  },
+});
+
 export default defineConfig({
-  plugins: [flatResolve(), react(), copyStatic()],
+  plugins: [flatResolve(), react(), copyStatic(), stableManifest()],
   build: { sourcemap: false, target: "es2020" },
 });

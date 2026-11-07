@@ -1,5 +1,5 @@
-import { Header } from "../ui";
-import { CONTACT_EMAIL } from "../supabase";
+import { Header } from "./ui";
+import { CONTACT_EMAIL } from "./supabase";
 
 const Contact = () => (
   <p>للتواصل بخصوص بياناتك أو أي استفسار: {CONTACT_EMAIL ? <a className="ltr bold" style={{ display: "inline-block", color: "var(--deep)" }} href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> : "عبر بريد التواصل الذي تعلنه إدارة التطبيق."}</p>

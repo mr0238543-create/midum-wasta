@@ -1,10 +1,10 @@
 import { useState } from "react";
-import Icon from "../icons";
-import { useApp } from "../app";
-import { go } from "../router";
-import * as api from "../api";
-import { Async, Empty, ErrorBox, Header, Loading, StatusBadge, TabHeader, Tabs2, useAsync } from "../ui";
-import { REQUEST_STATUS, timeAgo, toAr } from "../util";
+import Icon from "./icons";
+import { useApp } from "./app";
+import { go } from "./router";
+import * as api from "./api";
+import { Async, Empty, ErrorBox, Header, Loading, StatusBadge, TabHeader, Tabs2, useAsync } from "./ui";
+import { REQUEST_STATUS, timeAgo, toAr } from "./util";
 
 const KIND = { service: "طلب خدمة", inquiry: "استفسار" };
 

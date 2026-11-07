@@ -1,13 +1,13 @@
-import { usePush } from "../push";
+import { usePush } from "./push";
 import { useState } from "react";
-import Icon from "../icons";
-import { useApp } from "../app";
-import { go } from "../router";
-import * as api from "../api";
-import { Field, Sheet, TabHeader } from "../ui";
-import { areaLabel, useArea } from "../area";
+import Icon from "./icons";
+import { useApp } from "./app";
+import { go } from "./router";
+import * as api from "./api";
+import { Field, Sheet, TabHeader } from "./ui";
+import { areaLabel, useArea } from "./area";
 import { AreaSheet } from "./shared";
-import { toAr } from "../util";
+import { toAr } from "./util";
 
 const ROLE = { user: "مستخدم", owner: "صاحب نشاط", admin: "مشرف" };
 

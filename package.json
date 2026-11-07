@@ -1,10 +1,10 @@
 {
-  "name": "midum-wasta",
+  "name": "daleely",
   "version": "1.0.0",
   "private": true,
   "engines": { "node": ">=18" },
   "type": "module",
-  "description": "ميدوم والواسطي — دليل محلي لأهالي مركزي ميدوم والواسطى",
+  "description": "دليلي - DALEELY — دليل محلي لأهالي مركزي ميدوم والواسطى",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

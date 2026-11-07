@@ -1,13 +1,13 @@
-import { usePush } from "./push";
+import { usePush } from "../push";
 import { useState } from "react";
-import Icon from "./icons";
-import { useApp } from "./app";
-import { go } from "./router";
-import * as api from "./api";
-import { Field, Sheet, TabHeader } from "./ui";
-import { areaLabel, useArea } from "./area";
+import Icon from "../icons";
+import { useApp } from "../app";
+import { go } from "../router";
+import * as api from "../api";
+import { Field, Sheet, TabHeader } from "../ui";
+import { areaLabel, useArea } from "../area";
 import { AreaSheet } from "./shared";
-import { toAr } from "./util";
+import { toAr } from "../util";
 
 const ROLE = { user: "مستخدم", owner: "صاحب نشاط", admin: "مشرف" };
 
@@ -122,7 +122,7 @@ export default function Account() {
             <Item icon="trash" label="حذف حسابي" danger onClick={del} />
           </div>
         )}
-        <p className="tiny muted center mt24">ميدوم والواسطي</p>
+        <p className="tiny muted center mt24">دليلي - DALEELY</p>
       </div>
       {areaOpen && <AreaSheet onClose={() => setAreaOpen(false)} />}
       {edit && <EditProfile onClose={() => setEdit(false)} />}

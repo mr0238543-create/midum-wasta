@@ -1,5 +1,5 @@
 // تنظيف كاش النسخ القديمة عند أول فتح بعد كل إصدار. غيّر BUILD عند أي إصدار تريد فيه إجبار التحديث.
-const BUILD = "2026-11-06-b";
+const BUILD = "2026-11-07-b";
 (async () => {
   try {
     if (localStorage.getItem("mw_build") === BUILD) return;

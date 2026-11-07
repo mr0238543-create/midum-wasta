@@ -142,7 +142,7 @@ export default function Login() {
     try {
       await api.updateMyProfile(uid, { full_name: n, village_id: villageId ? Number(villageId) : null });
       await refreshProfile();
-      toast("أهلًا بك في «ميدوم والواسطي»");
+      toast("أهلًا بك في «دليلي»");
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
 
@@ -151,7 +151,7 @@ export default function Login() {
   const brand = (
     <div className="hdr big" style={{ paddingBottom: 40 }}>
       <div className="blob" style={{ width: 150, height: 150, left: -40, top: -40 }} />
-      <h1 style={{ position: "relative" }}>ميدوم والواسطي</h1>
+      <h1 style={{ position: "relative" }}>دليلي</h1>
       <p style={{ margin: "4px 0 0", fontSize: 14, opacity: 0.92, position: "relative" }}>سجّل الدخول لتتواصل مع الأنشطة وتضيف نشاطك</p>
     </div>
   );

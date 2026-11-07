@@ -1,12 +1,12 @@
 import { useState } from "react";
-import Icon from "./icons";
-import { useApp } from "./app";
-import { go } from "./router";
-import * as api from "./api";
-import { Async, Empty, ErrorBox, Field, Header, Loading, StatusBadge, useAsync } from "./ui";
-import { areaLabel, useArea } from "./area";
+import Icon from "../icons";
+import { useApp } from "../app";
+import { go } from "../router";
+import * as api from "../api";
+import { Async, Empty, ErrorBox, Field, Header, Loading, StatusBadge, useAsync } from "../ui";
+import { areaLabel, useArea } from "../area";
 import { AreaSheet, ReportSheet } from "./shared";
-import { JOB_STATUS, JOB_TYPES, isValidPhone, normalizePhone, timeAgo, toAr } from "./util";
+import { JOB_STATUS, JOB_TYPES, isValidPhone, normalizePhone, timeAgo, toAr } from "../util";
 
 export default function Jobs() {
   const { villages, village, requireLogin } = useApp();

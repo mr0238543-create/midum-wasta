@@ -56,7 +56,7 @@ export default function Home() {
         <div className="blob" style={{ width: 128, height: 128, right: 40, bottom: -48 }} />
         <div className="row between" style={{ position: "relative", alignItems: "flex-start" }}>
           <div>
-            <h1>ميدوم والواسطي</h1>
+            <h1>دليلي</h1>
             <p style={{ margin: "4px 0 0", fontSize: 14, opacity: 0.92 }}>دليلك لكل ما تحتاجه قريب منك</p>
           </div>
           <div className="row" style={{ gap: 8 }}>

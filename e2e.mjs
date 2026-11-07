@@ -41,7 +41,7 @@ const A = "201012345678", B = "201055555555", ADMIN = "201000000003";
 let bizId;
 
 await step("1. الرئيسية: العنوان، البحث، ١٣ قسمًا + الوظائف، الشريط السفلي", async () => {
-  await see("ميدوم والواسطي"); await see("تصفح الأقسام");
+  await see("دليلي"); await see("تصفح الأقسام");
   await page.getByPlaceholder("ابحث عن مطعم، محل، خدمة، وظيفة…").waitFor({ timeout: T });
   if ((await page.locator(".cat").count()) !== 14) throw new Error("expected 14 categories");
   for (const t of ["الرئيسية", "الأقسام", "طلباتي", "محادثاتي", "حسابي"]) await page.locator(".tabbar").getByText(t, { exact: true }).waitFor({ timeout: T });
@@ -216,7 +216,7 @@ await step("12c. الدخول بالإيميل: خطأ، إنشاء حساب، �
   await go("/account"); await see("sara@example.com");
 });
 await step("13. المشرف: بلاغ → إيقاف النشاط فيختفي من البحث", async () => {
-  await as(ADMIN); await go("/admin"); await click("البلاغات"); await see("محتوى غير مناسب".slice(0, 0) || "معلومات خاطئة");
+  await as(ADMIN); await go("/admin"); await see("إجمالي المسجلين"); await see("نشطون خلال ٧ أيام"); await click("البلاغات"); await see("محتوى غير مناسب".slice(0, 0) || "معلومات خاطئة");
   await page.getByRole("button", { name: "إيقاف المحتوى" }).click();
   await lastSheet().locator("textarea").fill("بيانات غير دقيقة"); await lastSheet().getByRole("button", { name: "إيقاف" }).click();
   await see("تم تنفيذ الإجراء");

@@ -1,5 +1,5 @@
-import { Header } from "./ui";
-import { CONTACT_EMAIL } from "./supabase";
+import { Header } from "../ui";
+import { CONTACT_EMAIL } from "../supabase";
 
 const Contact = () => (
   <p>للتواصل بخصوص بياناتك أو أي استفسار: {CONTACT_EMAIL ? <a className="ltr bold" style={{ display: "inline-block", color: "var(--deep)" }} href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> : "عبر بريد التواصل الذي تعلنه إدارة التطبيق."}</p>
@@ -10,7 +10,7 @@ export function Privacy() {
     <div className="screen">
       <Header title="سياسة الخصوصية" backTo="/account" />
       <div className="pad prose">
-        <p>«ميدوم والواسطي» دليل محلي لأهالي مركزي ميدوم والواسطى وقراهما. نوضح هنا ما نجمعه من بيانات ولماذا.</p>
+        <p>«دليلي» دليل محلي لأهالي مركزي ميدوم والواسطى وقراهما. نوضح هنا ما نجمعه من بيانات ولماذا.</p>
         <h3>البيانات التي نجمعها</h3>
         <ul>
           <li><b>رقم الموبايل:</b> لتسجيل الدخول برمز التحقق وحماية الحساب. لا يظهر لأحد.</li>
@@ -51,7 +51,7 @@ export function Terms() {
     <div className="screen">
       <Header title="الشروط والأحكام" backTo="/account" />
       <div className="pad prose">
-        <p>باستخدامك «ميدوم والواسطي» فإنك توافق على الشروط التالية.</p>
+        <p>باستخدامك «دليلي» فإنك توافق على الشروط التالية.</p>
         <h3>١. طبيعة الخدمة</h3>
         <p>التطبيق دليل يربط السكان بالأنشطة والخدمات المحلية. لسنا طرفًا في أي بيع أو اتفاق بين المستخدم وصاحب النشاط، ولا نضمن جودة الخدمات المعروضة.</p>
         <h3>٢. الحساب</h3>

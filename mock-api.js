@@ -306,3 +306,12 @@ export async function updateOrderStatus(id, status, reason) {
 export async function attachReceipt(id, path) { const o = db.orders.find((x) => x.id === id && x.user_id === uid); need(o && o.payment_method !== "cod" && ["new", "accepted"].includes(o.status), "لا يمكن تنفيذ هذا الإجراء على حالة الطلب الحالية. حدّث الصفحة."); o.receipt_path = path; return clone(o); }
 export async function uploadReceipt(id) { return `${id}/${uuid()}.jpg`; }
 export async function receiptUrl() { return "data:image/gif;base64,R0lGODlhAQABAIAAAP8AAP///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="; }
+
+// ── OneSignal + إحصاءات المشرف ──
+export async function linkOneSignalPlayer() {}
+export async function unlinkOneSignalPlayer() {}
+export async function adminUserStats() {
+  need(db.profiles[uid]?.role === "admin", "ليست لديك صلاحية لهذا الإجراء.", "42501");
+  const all = Object.values(db.profiles);
+  return { total_users: all.length, new_24h: all.length, new_7d: all.length, active_24h: 1, active_7d: 1, active_30d: all.length, push_devices: 0, push_users: 0 };
+}
